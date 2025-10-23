@@ -1,0 +1,108 @@
+== Coordinate System ==
+Z=0: Bed
+Origin: Top left corner
+A: Rotation axis
+In mm
+
+Z+
+/\
+\/
+Z-
+ O X- <-------> X+
+Y+
+/\
+||
+||
+\/
+Y-
+
+== G-Code Refrence ==
+
+Fn                  (Set Feed Rate)
+G0 Xn Yn Zn         (Rapid)
+G1 Xn Yn Zn         (Feed Rate)
+G28 X Y             (Home)
+G90                 (absolute mode)
+G91                 (incremental mode)
+G92 Xn Yn Zn        (Set current pos to given coords)
+G94                 (Units per minute mode)
+
+
+== TODO ==
+ Have user remove large SMD components
+ - Order components in CSV by same component
+ - Generate G-Code, wait for computer vision, wait for user to load new components
+ - Needs to wait for machine to be idle
+
+ 0. Calibrate, home, setup
+ 1. Parse components
+ 2. Order by component, set diff from last
+ Loop:
+ 1. Handle web API: send telemetry / handle requests 
+ 2. Send to feeder
+ 3. Wait for CV offsets -> move XY, lower Z, vacuum, raise Z
+ 4. Send to inspection
+ 5. Wait for CV offset -> rotate A
+ 6. Step feeder, based on sprocket size in CSV
+ 7. Send to PCB
+ 8. Wait for CV offset -> move XY, lower Z, unvacuum, raise Z
+ 9. Increment placement list index, 
+    if different_from_last -> PnP_state = reload
+    if placement list empty -> PnP_state = stopped
+
+Assume: Feeder faces in the Y+ direction
+0 degrees orientation: pin 1 is TL
+When cut tape increments upward with holes on the left:
+C1: BL
+C2: TL
+C3: TR
+C4: BR
+M1: Left side
+
+== Cut Tape Measurements ==
+            left
+bot     Feeding -------->    top
+============================  ----
+ o o o o o o o o o o o o o o  -
+ _    _    _1   _    _    _   F
+|o|  |o|  |o|  |o|  |o|  |o|  -  W
+ -    -    -    -    -    - 
+ |  P | 
+============================  ----
+            right
+
+Sprocket hole pitch (universal): 4mm
+Pocket pitch: 8mm, 12mm, 16mm, 24mm, 32mm, 36mm = P
+Pocket center from edge: 
+    Tape width: 8mm, 12mm, 16mm, 24mm, 32mm, 44mm = W
+    Sprocket hole distance from edge: 1.75mm
+    component center from sprocket hole = (W - 1mm)/2 = F
+Sprocket radius = R (mm)
+( q / 360 ) * ( 2pi * R ) = P
+step degrees q = P * ( 360 / ( 2pi * R ) )
+
+
+== Component Orientation ==
+
+Set head angle
+==============
+Caps / Resistors : Assume horizontal normally
+    0 : Horizontal
+    90 : Vertical
+    180 : Horizontal
+    -90 : Vertical
+Diodes (GND side) : GND on holes side in cut tape
+    0 : left
+    90 : bottom
+    180 : right
+    -90 : top
+IC (Pin 1) :
+    Fix Tape Orientation (rotate X degrees | pin 1 is TL):
+        C1: -90
+        C2: 0
+        C3: 90
+        C4: 180
+    Rotate for PCB placement:
+        Add Rotation
+
+set degrees q = orientation - tape_orientation;
