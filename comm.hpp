@@ -10,9 +10,18 @@ using namespace std;
 
 #define BAUD B115200
 
-int setupComm();
-string readLine(int fd);
-void writeLine(int fd, const string &s);
-bool isIdle(int fd);
+class Comm {
+    private:
+        int m_fd;
+
+    public:
+        void setupComm();
+        string readLine();
+        void writeLine(const string &s);
+        bool isIdle();
+        int getFD();
+        void closeComm();
+
+};
 
 #endif /* COMM_H */

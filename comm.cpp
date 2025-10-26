@@ -1,20 +1,20 @@
 
 #include "comm.hpp"
 
-int setupComm()
+void Comm::setupComm()
 {
-    int fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+    m_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
 
-    if (fd < 0) {
+    if (m_fd < 0) {
         perror("openSerial");
-        return -1;
+        return;
     }
     
     struct termios tty;
 
-    if (tcgetattr(fd, &tty) != 0) {
+    if (tcgetattr(m_fd, &tty) != 0) {
         perror("tcgetattr");
-        return -1;
+        return;
     }
 
     cfsetospeed(&tty, BAUD);
@@ -33,19 +33,19 @@ int setupComm()
     tty.c_cflag &= ~CSIZE; 
     tty.c_cflag |= CS8; // 8 data bits
 
-    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+    if (tcsetattr(m_fd, TCSANOW, &tty) != 0) {
         perror("tcsetattr");
-        return -1;
+        return;
     }
 
-    return fd;
+    return;
 }
 
-string readLine(int fd) {
+string Comm::readLine() {
     string line;
     char c;
     while (true) {
-        int n = read(fd, &c, 1);
+        int n = read(m_fd, &c, 1);
         if (n > 0) {
             if (c == '\n') break;
             if (c != '\r') line += c;
@@ -56,8 +56,13 @@ string readLine(int fd) {
     return line;
 }
 
-void writeLine(int fd, const string &s) 
+void Comm::writeLine(const string &s) 
 {
     string out = s + "\n";
-    write(fd, out.c_str(), out.size());
+    write(m_fd, out.c_str(), out.size());
+}
+
+int Comm::getFD()
+{
+    return m_fd;
 }
