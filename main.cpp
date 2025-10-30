@@ -30,10 +30,9 @@ int main() {
             set cuttape config
         else 
             ask user to input or remove from placement map
-    
     */
     parseCSV();
-
+    // rovePnP.printComponents();
 
     //Init GRBL
     rovePnP.grbl.comm.writeLine(init_g);
@@ -43,19 +42,25 @@ int main() {
     FC_msSleep(2000);
     cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
 
+    /*
+        Go to feducial
+        Record positions
+        Apply global offset
+    */
+
     while (rovePnP.getState() != STOP)
     {
 
         switch (rovePnP.getState())
         {
             case PICK: {
-                cout << "FC: Pick state" << endl;
+                cout << "FC: Pick state:  " << rovePnP.getCurrentComponent().ref << endl;
 
                 /*  
                     Set head to 0
                     increment feeder
                     Go to feeder coords
-                    Increment by CV offsets
+                    Maybe: Increment by CV offsets
                     Lower Z
                     Vacuum on
                     Up Z
@@ -71,9 +76,10 @@ int main() {
                 /*
                     Go to inspect coords
                     Orient component
-                    Increment by CV offsets
+                    Increment by CV rotational offsets
+                    Record CV XYZ offsets
                 */
-                rovePnP.setAngle(90, HEAD_A);
+                // rovePnP.setAngle(90, HEAD_A);
 
                 rovePnP.setState(PLACE);
                 break;
@@ -83,7 +89,7 @@ int main() {
 
                 /*
                     Go to PCB coords
-                    Increment by CV offsets
+                    Increment by recorded CV XYZ offsets
                     Lower Z
                     Vacuum off
                     Up Z
@@ -116,7 +122,7 @@ int main() {
                 break;
             }
             case RELOAD: {
-                cout << "FC: Reload state" << endl;
+                cout << "FC: Reload state:  P: " << rovePnP.getCurrentComponent().package << "  V: " << rovePnP.getCurrentComponent().value << endl;
 
                 /*
                     Wait for user to reload and go
@@ -127,6 +133,8 @@ int main() {
             }
             case MANUAL: {
                 cout << "FC: Manual state" << endl;
+
+                /* Wait for user to finish */
 
                 rovePnP.setState(rovePnP.getPreviousState());
                 break;
@@ -196,8 +204,14 @@ void parseCSV()
             parseItemFloat(ss), //posY
             parseItemFloat(ss), //rotation
             parseItemString(ss), //side
+            {
+                0.0,
+                0.0,
+                (orientation_t)0,
+            }
         };
 
         rovePnP.addComponent(component);
     }
+    rovePnP.initIterators();
 }

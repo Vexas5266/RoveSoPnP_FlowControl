@@ -3,18 +3,9 @@
 
 using namespace std; 
 
-const int orientations_a[CNT_O] = {
-    0,   /* NA */
-    90,  /* C1 */
-    0,   /* C2 */
-    -90, /* C3 */
-    180, /* C4 */
-    0,   /* M1 */
-};
-
 void PnP::addComponent(component_t component)
 {
-    tuple<string, string> unique_comp {component.value, component.package};
+    tuple<string, string> unique_comp = {component.value, component.package};
     placement_map[unique_comp].push_back(component);
 }
 
@@ -35,6 +26,19 @@ state_t PnP::advanceComponent()
     if (unique_it == placement_map.end()) next_state = STOP;
 
     return next_state;
+}
+
+component_t PnP::getCurrentComponent()
+{
+    return *component_it;
+}
+
+void PnP::fillCutTapes()
+{
+
+    map<tuple<string, string>, vector<component_t>>::iterator comp_it = placement_map.begin();
+
+    
 }
 
 void PnP::setState(state_t state)
@@ -126,4 +130,29 @@ void PnP::orientComponent()
     q %= 360;
 
     PnP::setAngle(q, HEAD_A);
+}
+
+void PnP::printComponents()
+{
+    map<tuple<string, string>, vector<component_t>>::iterator u_it = placement_map.begin();
+    vector<component_t>::iterator c_it = unique_it->second.begin();
+    while (u_it != placement_map.end())
+    {
+        cout << c_it->ref << endl;
+
+        c_it++;
+
+        //Handle iterators
+        if (c_it == u_it->second.end()) 
+        {
+            u_it++;
+            c_it = u_it->second.begin();
+        }
+    }
+}
+
+void PnP::initIterators()
+{
+    unique_it = placement_map.begin();
+    component_it = unique_it->second.begin();
 }

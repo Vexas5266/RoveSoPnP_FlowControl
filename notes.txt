@@ -17,6 +17,7 @@ Y+
 Y-
 
 == G-Code Refrence ==
+http://wiki.fluidnc.com/en/features/supported_gcodes
 
 Fn                  (Set Feed Rate)
 G0 Xn Yn Zn         (Rapid)
@@ -107,5 +108,13 @@ IC (Pin 1) :
 
 set degrees q = orientation - tape_orientation;
 
-TODO
-    
+XXXX-##W before XXXX-##
+
+0603 - 
+
+Vacuum motor: Laser PWM, 12V, GND
+    May need extra electronics on PCB
+
+Board Needs:
+    LED support
+    Vacuum motor

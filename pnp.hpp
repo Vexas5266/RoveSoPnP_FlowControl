@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include "grbl.hpp"
+#include "tapeLookup.hpp"
 
 #define GRBL_OK true
 #define SPROCKT_R 10 //mm
@@ -15,24 +16,6 @@
 #define HEAD_A 'A'
 
 using namespace std;
-
-enum orientation_t {
-    NA_O,
-    C1_O,
-    C2_O,
-    C3_O,
-    C4_O,
-    M1_O,
-    CNT_O
-};
-
-extern const int orientations_a[CNT_O];
-
-struct cuttape_t {
-    float pitch;
-    float width;
-    orientation_t orient;
-};
 
 struct component_t {
     string ref;
@@ -87,19 +70,23 @@ class PnP {
     private:
         map<tuple<string, string>, vector<component_t>> placement_map;
 
-        map<tuple<string, string>, vector<component_t>>::iterator unique_it = placement_map.begin();
-        vector<component_t>::iterator component_it = unique_it->second.begin();
+        map<tuple<string, string>, vector<component_t>>::iterator unique_it;
+        vector<component_t>::iterator component_it;
 
         state_t m_current_state = PICK;
         state_t m_previous_state = STOP;
         bool m_ok = true;
 
     public:
+
         void addComponent(component_t component);
         state_t advanceComponent();
+        component_t getCurrentComponent();
+        void fillCutTapes();
+
         void setState(state_t state);
         state_t getState();
-        state_t getPreviousState(); //Need? Resuming cant go to previous state, dont want to redo
+        state_t getPreviousState();
         bool isOK();
 
         void handleError();
@@ -110,6 +97,9 @@ class PnP {
 
         void feedComponent();
         void orientComponent();
+
+        void printComponents();
+        void initIterators();
 
         GRBL grbl;
 
