@@ -16,7 +16,7 @@ void FC_msSleep(long int dur); //in seconds
 
 // Need to set initial offsets from testing for Z and A axes
 const string speed = "300";
-const string init_g = "G20 G94 F" + speed;
+const string init_g = "G21 G94 F" + speed;
 const string home_g = "G90 G1 Z0.5\nG28 X Y\nG92 X0 Y0";
 
 int main() {
@@ -35,17 +35,35 @@ int main() {
     // rovePnP.printComponents();
 
     //Init GRBL
-    rovePnP.grbl.comm.writeLine(init_g);
-    rovePnP.grbl.comm.writeLine(home_g);
+    cout << "GRBL Initializing..." << endl;
+    // rovePnP.grbl.comm.writeLine(init_g);
+    // rovePnP.grbl.comm.writeLine(home_g);
 
     //Flush startup
     FC_msSleep(2000);
     cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
 
+    rovePnP.grbl.comm.writeLine("G90 G1 X0 Y0 Z0");
+    return; 
+
     /*
-        Go to feducial
-        Record positions
-        Apply global offset
+        Tell user to go to first feducial
+        Manually jog to feducial
+        CV reads offset
+        Increment axes by that offset
+        Set XYZ to the feducial coord
+
+        Tell user to jog to second feducial
+        CV reads offset
+        Increment axes by that offset
+        See how this feducial is rotated relative to first
+        Calculate board rotation
+
+        Tell user to jog to third feducial
+        CV reads offset
+        Increment axes by that offset
+        See how this feducial is rotated relative to first (on Z)
+        Calculate board Z axis rotation
     */
 
     while (rovePnP.getState() != STOP)
@@ -61,8 +79,8 @@ int main() {
                     increment feeder
                     Go to feeder coords
                     Maybe: Increment by CV offsets
-                    Lower Z
                     Vacuum on
+                    Lower Z
                     Up Z
                 */
 
@@ -89,7 +107,7 @@ int main() {
 
                 /*
                     Go to PCB coords
-                    Increment by recorded CV XYZ offsets
+                    Maybe: Increment by recorded CV XYZ offsets
                     Lower Z
                     Vacuum off
                     Up Z
@@ -122,9 +140,10 @@ int main() {
                 break;
             }
             case RELOAD: {
-                cout << "FC: Reload state:  P: " << rovePnP.getCurrentComponent().package << "  V: " << rovePnP.getCurrentComponent().value << endl;
+                cout << "FC: Reload state:  P: " << rovePnP.getCurrentComponent().package << "  V: " << rovePnP.getCurrentComponent().value << "  Tape: " << rovePnP.getCurrentCutTape().width << endl;
 
                 /*
+                    Tell user which new cuttape to load
                     Wait for user to reload and go
                 */
                 
@@ -204,14 +223,9 @@ void parseCSV()
             parseItemFloat(ss), //posY
             parseItemFloat(ss), //rotation
             parseItemString(ss), //side
-            {
-                0.0,
-                0.0,
-                (orientation_t)0,
-            }
         };
 
-        rovePnP.addComponent(component);
+        rovePnP.addComponentLookUp(component);
     }
     rovePnP.initIterators();
 }

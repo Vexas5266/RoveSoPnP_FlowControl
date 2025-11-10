@@ -20,7 +20,13 @@ struct cuttape_t {
     float pitch;
     float width;
     orientation_t orient;
+
+    bool operator<(const cuttape_t& other) const {
+        return pitch < other.pitch;
+    }
 };
+
+
 
 const int orientations_a[CNT_O] = {
     0,   /* NA */
@@ -31,9 +37,6 @@ const int orientations_a[CNT_O] = {
     0,   /* M1 */
 };
 
-const map<string, cuttape_t> cut_tape_map = {
-    {"0603", {4.0, 6.0, C2_O}},
-    {"0603", {4.0, 6.0, C2_O}},
-};
+extern map<string, cuttape_t> cut_tape_map;
 
 #endif

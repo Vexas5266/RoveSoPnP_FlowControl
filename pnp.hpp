@@ -25,7 +25,6 @@ struct component_t {
     float posY;
     float rotation;
     string side;
-    cuttape_t tape;
 };
 
 struct coords_t {
@@ -68,9 +67,9 @@ const coords_t places[CNT_P] = {
 
 class PnP {
     private:
-        map<tuple<string, string>, vector<component_t>> placement_map;
+        map<tuple<string, cuttape_t>, vector<component_t>> placement_map;
 
-        map<tuple<string, string>, vector<component_t>>::iterator unique_it;
+        map<tuple<string, cuttape_t>, vector<component_t>>::iterator cuttape_it;
         vector<component_t>::iterator component_it;
 
         state_t m_current_state = PICK;
@@ -79,10 +78,11 @@ class PnP {
 
     public:
 
-        void addComponent(component_t component);
+        void addComponentLookUp(component_t component);
+        void addComponent(component_t component, cuttape_t cuttape);
         state_t advanceComponent();
         component_t getCurrentComponent();
-        void fillCutTapes();
+        cuttape_t getCurrentCutTape();
 
         void setState(state_t state);
         state_t getState();

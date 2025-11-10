@@ -118,3 +118,26 @@ Vacuum motor: Laser PWM, 12V, GND
 Board Needs:
     LED support
     Vacuum motor
+
+TESTED:
+    - CSV parses and puts in order of package and value
+    - State machine goes Pick -> orient -> place -> reload properly
+    - Assigning cut tapes to sets of components
+
+NOT TESTED:
+    - Error states with PnP_ok
+    - Sending GCode 
+    - Going back to previous state after manual/pause
+    - Setting state via QT
+
+TO DO 
+    - Finish lookup
+    - Sending data between QT and FC
+    - How feducials work?
+    - Movement with PnP functions
+    - Vacuum control
+    - See 3 feducials in KiCAD in CSV
+    - Change CSV to mm
+    - While parsing, add everything but mark it as no cut tape, then ask later to remove or manually
+    - Fix USB serial
+    - Test functions with pen plotter
