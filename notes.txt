@@ -139,5 +139,18 @@ TO DO
     - See 3 feducials in KiCAD in CSV
     - Change CSV to mm
     - While parsing, add everything but mark it as no cut tape, then ask later to remove or manually
+    - Error handling with numbers
+
     - Fix USB serial
+        - UI selects comm port
     - Test functions with pen plotter
+    - Fix GRBL commands, feed rate G90/91 separate
+    - Send one line at a time
+    - Make sure to read after write
+    - Make init commands
+    - Fix PnP commands with new sendCommand()
+
+Error handling:
+    Exception for comm
+    Try 5 times then throw Exception
+    Return error type for grbl timeout 

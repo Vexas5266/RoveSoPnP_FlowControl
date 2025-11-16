@@ -67,6 +67,8 @@ const coords_t places[CNT_P] = {
 
 class PnP {
     private:
+        map<tuple<string, string>, vector<component_t>> notInLookup;
+
         map<tuple<string, cuttape_t>, vector<component_t>> placement_map;
 
         map<tuple<string, cuttape_t>, vector<component_t>>::iterator cuttape_it;
@@ -79,7 +81,8 @@ class PnP {
     public:
 
         void addComponentLookUp(component_t component);
-        void addComponent(component_t component, cuttape_t cuttape);
+        void fillLostCuttapes();
+        
         state_t advanceComponent();
         component_t getCurrentComponent();
         cuttape_t getCurrentCutTape();

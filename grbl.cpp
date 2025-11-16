@@ -1,61 +1,92 @@
 
 #include "grbl.hpp"
 
-bool GRBL::isIdle() 
+//Works
+GRBL_status_t GRBL::pollStatus() 
 {
     // Ask GRBL for a status report
-    write(comm.getFD(), "?\n", 2);
+    comm.writeLine("?");
     this_thread::sleep_for(chrono::milliseconds(100));
-    string resp = comm.readLine();
-    return resp.find("Idle") != string::npos;
+    string resp = comm.readLine(); //Get response
+
+    if (waitForCommand() != GRBL_OK) return ERROR_G;
+
+    if (resp.find("Idle") != string::npos) return IDLE_G;
+    if (resp.find("Run") != string::npos) return RUN_G;
+
+    return ERROR_G;
 }
 
+//Works
 bool GRBL::waitForMotion()
 {
     bool ok = true;
     //Wait for GRBL to be idle
-    int timeout = TIMEOUT_E_S;
-    while ((!isIdle()) && (timeout > 0)) {
-        cout << "Running..." << endl;
+    int timeout = GRBL_TIMEOUT;
+    GRBL_status_t status;
+
+    do
+    {
+        status = pollStatus();
+
         timeout--;
         this_thread::sleep_for(chrono::milliseconds(1000));
-    }
+    } while ((status == RUN_G) && (timeout > 0));
+    
     if (timeout <= 0) {
-        cout << "ERROR: MOTION TIMED OUT" << endl;
+        #if (EN_GRBL_STAT)
+            cout << "Motion: Timed out" << endl;
+        #endif
         ok = false;
     }
 
-    cout << "Motion complete." << endl;
+    if (status == ERROR_G) ok = false;
+
+    #if (EN_GRBL_STAT)
+        if (ok == GRBL_OK) cout << "Motion: Complete" << endl;
+    #endif
+
     return ok;
 }
 
+//Works
 bool GRBL::waitForCommand()
 {
-    //Wait for ok response
     bool ok = true;
 
-    int timeout = TIMEOUT_E_S;
-    while (timeout > 0)
-    {
-        string response = comm.readLine();
-        if (response == "ok") break;
-        if (!response.empty()) {
-            cout << "GRBL: " << response << endl;
-            ok = false;
-            break;
-        }
-        this_thread::sleep_for(chrono::milliseconds(1000));
-        timeout--;
-    }
-    if (timeout <= 0) {
-        cout << "ERROR: CMND SEND TIMED OUT" << endl;
-        ok = false;
-    }
+    string response = comm.readLine();
+    if (response != "ok") ok = false;
 
     return ok;
 }
 
-void Comm::closeComm()
+//Works
+bool GRBL::sendCommand(string cmd_g)
 {
-    close(m_fd);
+    bool ok = true;
+    comm.writeLine(cmd_g);
+    this_thread::sleep_for(chrono::milliseconds(50));
+    ok = waitForCommand();
+
+    return ok;
+}
+
+//Works
+bool GRBL::sendMotion(string motion_g)
+{
+    bool ok = true;
+
+    ok = sendCommand(motion_g);
+    this_thread::sleep_for(chrono::milliseconds(50));
+    if (ok == GRBL_OK) ok = waitForMotion();
+
+    return ok;
+}
+
+void GRBL::init()
+{
+    // const string prep_g = "[Ctrl+X]]\nS1000\n$#";
+    // const string init_g = "G21\nG94";
+    // const string home_g = "G90\nG1 Z0.5\nG28 X Y\nG92 X0 Y0";
+
 }

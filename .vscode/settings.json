@@ -54,7 +54,9 @@
         "algorithm": "cpp",
         "map": "cpp",
         "__assert": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "__tree": "cpp",
+        "cstddef": "cpp"
     },
     "idf.pythonInstallPath": "/opt/miniconda3/bin/python"
 }

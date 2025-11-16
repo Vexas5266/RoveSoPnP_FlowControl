@@ -5,14 +5,28 @@
 #include <thread>
 #include <iostream>
 
-#define TIMEOUT_E_S 15 //seconds
+#define GRBL_TIMEOUT 60 //seconds
+#define GRBL_OK true
+
+#define EN_GRBL_STAT false
+
+typedef enum {
+    IDLE_G,
+    RUN_G,
+    ERROR_G,
+    CNT_G
+} GRBL_status_t;
 
 class GRBL {
     private:
     public:
-        bool isIdle();
+        GRBL_status_t pollStatus();
         bool waitForMotion();
         bool waitForCommand();
+        bool sendCommand(string cmd_g);
+        bool sendMotion(string motion_g);
+        void init();
+
         Comm comm;
 
 };

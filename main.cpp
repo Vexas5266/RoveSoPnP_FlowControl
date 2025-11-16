@@ -8,6 +8,7 @@
 using namespace std;
 
 PnP rovePnP;
+int comp_count = 0;
 
 void parseCSV();
 ifstream file("ArmBoard_Hardware-all-pos.csv");
@@ -15,13 +16,10 @@ ifstream file("ArmBoard_Hardware-all-pos.csv");
 void FC_msSleep(long int dur); //in seconds
 
 // Need to set initial offsets from testing for Z and A axes
-const string speed = "300";
-const string init_g = "G21 G94 F" + speed;
-const string home_g = "G90 G1 Z0.5\nG28 X Y\nG92 X0 Y0";
 
 int main() {
 
-    rovePnP.grbl.comm.setupComm();
+    // if (rovePnP.grbl.comm.setupComm() == false) return 0;
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -32,19 +30,17 @@ int main() {
             ask user to input or remove from placement map
     */
     parseCSV();
-    // rovePnP.printComponents();
+    rovePnP.printComponents();
+    cout << " FILL LOST " << endl;
+    rovePnP.fillLostCuttapes();
+    rovePnP.printComponents();
 
     //Init GRBL
     cout << "GRBL Initializing..." << endl;
-    // rovePnP.grbl.comm.writeLine(init_g);
-    // rovePnP.grbl.comm.writeLine(home_g);
 
     //Flush startup
     FC_msSleep(2000);
-    cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
-
-    rovePnP.grbl.comm.writeLine("G90 G1 X0 Y0 Z0");
-    return; 
+    // cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
 
     /*
         Tell user to go to first feducial
@@ -119,6 +115,7 @@ int main() {
                     case 1: state = pick
                     case 2: state = reload 
                 */
+                comp_count++;
                 
                 state_t next_state = rovePnP.advanceComponent();
                 rovePnP.setState(next_state);
@@ -172,6 +169,7 @@ int main() {
     }
 
     cout << "FC: Stop state" << endl;
+    cout << "Placed: " << comp_count << endl;
 
 
     rovePnP.grbl.comm.closeComm();
