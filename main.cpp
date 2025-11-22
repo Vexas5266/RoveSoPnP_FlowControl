@@ -8,6 +8,7 @@
 using namespace std;
 
 #define PNP_FILE "ArmBoard_Hardware-all-pos.csv"
+#define COM_PORT "/dev/tty.usbserial-140"
 
 PnP rovePnP;
 int comp_count = 0;
@@ -18,20 +19,15 @@ void FC_msSleep(long int dur); //in seconds
 
 int main() {
 
-    //Get port
-    if (rovePnP.grbl.comm.setupComm("/dev/tty.usbserial-140") == false)
-    {
-        //Send Error while?
-    }
-
     /*
     
         Ask User:
         CSV File
         Com port
 
-
     */
+
+    if (rovePnP.init(COM_PORT) == false) return 0;
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -44,15 +40,6 @@ int main() {
     rovePnP.parseCSV(PNP_FILE);
     rovePnP.fillLostCuttapes();
     rovePnP.printComponents();
-
-    //Init GRBL
-    cout << "GRBL Initializing..." << endl;
-
-    //Flush startup
-    FC_msSleep(2000);
-    cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
-
-    //Send initial GRBL commands
 
     /*
         Tell user to go to first feducial

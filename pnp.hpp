@@ -105,7 +105,7 @@ class PnP {
         void initIterators();
 
         void parseCSV(const char* csvFile);
-        void initPnP(const char* commPort);
+        bool init(const char* commPort);
 
         GRBL grbl;
 
