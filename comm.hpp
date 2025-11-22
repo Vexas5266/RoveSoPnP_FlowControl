@@ -23,7 +23,7 @@ class Comm {
         int m_fd;
 
     public:
-        bool setupComm();
+        bool setupComm(const char* portName);
         string readLine();
         void writeLine(const string &s);
         bool pollStatus();

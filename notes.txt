@@ -131,7 +131,6 @@ NOT TESTED:
     - Setting state via QT
 
 TO DO 
-    - Finish lookup
     - Sending data between QT and FC
     - How feducials work?
     - Movement with PnP functions
@@ -149,8 +148,3 @@ TO DO
     - Make sure to read after write
     - Make init commands
     - Fix PnP commands with new sendCommand()
-
-Error handling:
-    Exception for comm
-    Try 5 times then throw Exception
-    Return error type for grbl timeout 

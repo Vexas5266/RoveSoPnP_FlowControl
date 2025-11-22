@@ -1,10 +1,9 @@
 
 #include "comm.hpp"
 
-bool Comm::setupComm()
+bool Comm::setupComm(const char* portName)
 {
 
-    const char* portName = "/dev/tty.usbserial-140"; // adjust to match your port
     m_fd = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (m_fd < 0) {
         std::cerr << "Error opening " << portName << std::endl;

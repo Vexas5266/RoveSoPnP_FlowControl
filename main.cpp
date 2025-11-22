@@ -7,11 +7,10 @@
 
 using namespace std;
 
+#define PNP_FILE "ArmBoard_Hardware-all-pos.csv"
+
 PnP rovePnP;
 int comp_count = 0;
-
-void parseCSV();
-ifstream file("ArmBoard_Hardware-all-pos.csv");
 
 void FC_msSleep(long int dur); //in seconds
 
@@ -19,7 +18,20 @@ void FC_msSleep(long int dur); //in seconds
 
 int main() {
 
-    // if (rovePnP.grbl.comm.setupComm() == false) return 0;
+    //Get port
+    if (rovePnP.grbl.comm.setupComm("/dev/tty.usbserial-140") == false)
+    {
+        //Send Error while?
+    }
+
+    /*
+    
+        Ask User:
+        CSV File
+        Com port
+
+
+    */
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -29,9 +41,7 @@ int main() {
         else 
             ask user to input or remove from placement map
     */
-    parseCSV();
-    rovePnP.printComponents();
-    cout << " FILL LOST " << endl;
+    rovePnP.parseCSV(PNP_FILE);
     rovePnP.fillLostCuttapes();
     rovePnP.printComponents();
 
@@ -40,7 +50,9 @@ int main() {
 
     //Flush startup
     FC_msSleep(2000);
-    // cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
+    cout << "GRBL Startup:  " << rovePnP.grbl.comm.readLine() << endl;
+
+    //Send initial GRBL commands
 
     /*
         Tell user to go to first feducial
@@ -180,50 +192,4 @@ int main() {
 void FC_msSleep(long int dur)
 {
     this_thread::sleep_for(chrono::milliseconds(dur));
-}
-
-string parseItemString(stringstream &s)
-{
-    string data;
-    getline(s, data, ',');
-    data = data.substr(1, data.length() - 2);
-    // cout << data << endl;
-    return data;
-}
-
-float parseItemFloat(stringstream &s)
-{
-    string data;
-    getline(s, data, ',');
-    // cout << data << endl;
-    return stof(data);
-}
-
-int parseItemInt(stringstream &s)
-{
-    string data;
-    getline(s, data, ',');
-    // cout << data << endl;
-    return stoi(data);
-}
-
-void parseCSV()
-{
-    string line;
-    getline(file, line, '\n');
-    while (getline(file, line, '\n')) {
-        stringstream ss(line);
-        component_t component = {
-            parseItemString(ss), //ref
-            parseItemString(ss), //value
-            parseItemString(ss), //package
-            parseItemFloat(ss), //posX
-            parseItemFloat(ss), //posY
-            parseItemFloat(ss), //rotation
-            parseItemString(ss), //side
-        };
-
-        rovePnP.addComponentLookUp(component);
-    }
-    rovePnP.initIterators();
 }

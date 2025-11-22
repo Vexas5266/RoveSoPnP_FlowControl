@@ -1,5 +1,6 @@
 
 #include "pnp.hpp"
+#include "parse.hpp"
 
 using namespace std; 
 
@@ -199,4 +200,31 @@ void PnP::initIterators()
 {
     cuttape_it = placement_map.begin();
     component_it = cuttape_it->second.begin();
+}
+
+void PnP::initPnP(const char* commPort)
+{
+    //Start comm, fill csv
+}
+
+void PnP::parseCSV(const char* csvFile)
+{
+    ifstream file(csvFile);
+    string line;
+    getline(file, line, '\n');
+    while (getline(file, line, '\n')) {
+        stringstream ss(line);
+        component_t component = {
+            parseItemString(ss), //ref
+            parseItemString(ss), //value
+            parseItemString(ss), //package
+            parseItemFloat(ss), //posX
+            parseItemFloat(ss), //posY
+            parseItemFloat(ss), //rotation
+            parseItemString(ss), //side
+        };
+
+        PnP::addComponentLookUp(component);
+    }
+    PnP::initIterators();
 }
