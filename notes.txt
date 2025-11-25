@@ -142,3 +142,13 @@ TO DO
     - Test functions with pen plotter
     - Make init commands
     - Fix PnP commands with new sendCommand()
+    - Make state machine tick function
+    - Update CV offset function, keep track of XYZ offset (member var struct), get from CV library
+    - Make map separate class and add to PnP class
+        - Init map as part of PnP constructor (UI owns map)
+        - Separate update map function, PnP needs to be in STOP state first, return error
+        - Comm port init part of PnP constructor
+    - Parse BOM for specific component, add to parseCSV
+        - Parsing done on UI side
+    - Add error handling that cascades up to UI, enum
+        - Let UI handle errors, just return error, keep track of state
