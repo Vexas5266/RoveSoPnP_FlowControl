@@ -3,10 +3,14 @@ project(RoveSoPnP_FlowControl CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(RoveSoPnP_FlowControl
-    main.cpp
-    parse.cpp
-    pnp.cpp
-    tapeLookup.cpp
-    grbl.cpp
-    comm.cpp
+    src/main.cpp
+    src/parse.cpp
+    src/pnp.cpp
+    src/tapeLookup.cpp
+    src/grbl.cpp
+    src/comm.cpp
+)
+
+target_include_directories(RoveSoPnP_FlowControl PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
