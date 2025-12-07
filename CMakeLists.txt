@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(RoveSoPnP_FlowControl CXX)
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(RoveSoPnP_FlowControl
+add_library(RoveSoPnP_FlowControl
     src/main.cpp
     src/parse.cpp
     src/pnp.cpp
@@ -11,6 +11,6 @@ add_executable(RoveSoPnP_FlowControl
     src/comm.cpp
 )
 
-target_include_directories(RoveSoPnP_FlowControl PRIVATE
+target_include_directories(RoveSoPnP_FlowControl PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
