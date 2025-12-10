@@ -15,6 +15,7 @@ using namespace std;
 #define SERIAL_TIMEOUT 15
 
 #define EN_ECHO false
+#define INIT_COMM false
 
 const string speed = "300";
 
@@ -26,7 +27,6 @@ class Comm {
         bool setupComm(const char* portName);
         string readLine();
         void writeLine(const string &s);
-        bool pollStatus();
         int getFD();
         void closeComm();
 

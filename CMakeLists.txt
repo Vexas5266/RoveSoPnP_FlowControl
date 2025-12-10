@@ -3,7 +3,7 @@ project(RoveSoPnP_FlowControl CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 add_library(RoveFlowControl
-    src/parse.cpp
+    src/components.cpp
     src/pnp.cpp
     src/tapeLookup.cpp
     src/grbl.cpp

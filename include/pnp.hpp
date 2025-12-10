@@ -9,6 +9,7 @@
 #include <iostream>
 #include "grbl.hpp"
 #include "tapeLookup.hpp"
+#include "components.hpp"
 
 #define GRBL_OK true
 #define SPROCKT_R 10 //mm
@@ -16,22 +17,6 @@
 #define HEAD_A 'A'
 
 using namespace std;
-
-struct component_t {
-    string ref;
-    string value;
-    string package;
-    float posX;
-    float posY;
-    float rotation;
-    string side;
-};
-
-struct coords_t {
-    float x;
-    float y;
-    float z;
-};
 
 enum state_t {
     STOP,
@@ -67,12 +52,6 @@ const coords_t places[CNT_P] = {
 
 class PnP {
     private:
-        map<tuple<string, string>, vector<component_t>> notInLookup;
-
-        map<tuple<string, cuttape_t>, vector<component_t>> placement_map;
-
-        map<tuple<string, cuttape_t>, vector<component_t>>::iterator cuttape_it;
-        vector<component_t>::iterator component_it;
 
         state_t m_current_state = PICK;
         state_t m_previous_state = STOP;
@@ -80,13 +59,7 @@ class PnP {
 
     public:
 
-        void addComponentLookUp(component_t component);
-        void fillLostCuttapes();
-        
         state_t advanceComponent();
-        component_t getCurrentComponent();
-        cuttape_t getCurrentCutTape();
-
         void setState(state_t state);
         state_t getState();
         state_t getPreviousState();
@@ -101,13 +74,10 @@ class PnP {
         void feedComponent();
         void orientComponent();
 
-        void printComponents();
-        void initIterators();
-
-        void parseCSV(const char* csvFile);
         bool init(const char* commPort);
 
         GRBL grbl;
+        Components components;
 
 };
 

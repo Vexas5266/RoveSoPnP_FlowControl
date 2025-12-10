@@ -27,7 +27,9 @@ int main() {
 
     */
 
-    if (rovePnP.init(COM_PORT) == false) return 0;
+    #if (INIT_COMM)
+        if (rovePnP.init(COM_PORT) == false) return 0;
+    #endif
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -37,9 +39,9 @@ int main() {
         else 
             ask user to input or remove from placement map
     */
-    rovePnP.parseCSV(PNP_FILE);
-    rovePnP.fillLostCuttapes();
-    rovePnP.printComponents();
+    rovePnP.components.parseCSV(PNP_FILE);
+    rovePnP.components.fillLostCuttapes();
+    rovePnP.components.printComponents();
 
     /*
         Tell user to go to first feducial
@@ -67,7 +69,7 @@ int main() {
         switch (rovePnP.getState())
         {
             case PICK: {
-                cout << "FC: Pick state:  " << rovePnP.getCurrentComponent().ref << endl;
+                cout << "FC: Pick state:  " << rovePnP.components.getCurrentComponent().ref << endl;
 
                 /*  
                     Set head to 0
@@ -136,7 +138,7 @@ int main() {
                 break;
             }
             case RELOAD: {
-                cout << "FC: Reload state:  P: " << rovePnP.getCurrentComponent().package << "  V: " << rovePnP.getCurrentComponent().value << "  Tape: " << rovePnP.getCurrentCutTape().width << endl;
+                cout << "FC: Reload state:  P: " << rovePnP.components.getCurrentComponent().package << "  V: " << rovePnP.components.getCurrentComponent().value << "  Tape: " << rovePnP.components.getCurrentCutTape().width << endl;
 
                 /*
                     Tell user which new cuttape to load
