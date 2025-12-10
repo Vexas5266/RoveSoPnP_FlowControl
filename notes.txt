@@ -132,23 +132,25 @@ NOT TESTED:
 
 TO DO 
     - Sending data between QT and FC
-    - How feducials work?
     - Movement with PnP functions
     - Vacuum control
-    - See 3 feducials in KiCAD in CSV
-    - Change CSV to mm
+    - Handle 3 feducials from CSV
     - Error handling?
     - QT sets com port and csv file
     - Test functions with pen plotter
     - Make init commands
     - Fix PnP commands with new sendCommand()
+
     - Make state machine tick function
     - Update CV offset function, keep track of XYZ offset (member var struct), get from CV library
     - Make map separate class and add to PnP class
         - Init map as part of PnP constructor (UI owns map)
         - Separate update map function, PnP needs to be in STOP state first, return error
         - Comm port init part of PnP constructor
-    - Parse BOM for specific component, add to parseCSV
-        - Parsing done on UI side
     - Add error handling that cascades up to UI, enum
         - Let UI handle errors, just return error, keep track of state
+
+Standalone Build (in build dir)
+cmake -DBUILD_STANDALONE=True ..
+cmake --build .
+./RoveFlowControlRunner

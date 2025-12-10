@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define PNP_FILE "ArmBoard_Hardware-all-pos.csv"
+#define PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
 #define COM_PORT "/dev/tty.wchusbserial130"
 
 PnP rovePnP;
