@@ -118,28 +118,3 @@ void PnP::orientComponent()
 
     PnP::setAngle(q, HEAD_A);
 }
-
-bool PnP::init(const char* commPort)
-{
-    //Start comm, fill csv
-    cout << "Init PnP..." << endl;
-    if (grbl.comm.setupComm(commPort) == false) {
-        cout << "COM SETUP FAILED" << endl;
-        return false;
-    }
-
-    //Init GRBL
-    cout << "GRBL Initializing..." << endl;
-
-    //Flush startup
-    this_thread::sleep_for(chrono::milliseconds(2000));
-    cout << "GRBL Startup:  " << grbl.comm.readLine() << endl;
-
-    //Send GRBL setup commands
-    cout << "Sending GRBL setup commands..." << endl;
-    //TODO: Add setup commands (homing, feed, units, etc.)
-
-    cout << "PnP Init Complete." << endl;
-    return true;
-
-}

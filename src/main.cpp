@@ -10,7 +10,6 @@ using namespace std;
 #define PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
 #define COM_PORT "/dev/tty.wchusbserial130"
 
-PnP rovePnP;
 int comp_count = 0;
 
 void FC_msSleep(long int dur); //in seconds
@@ -27,9 +26,7 @@ int main() {
 
     */
 
-    #if (INIT_COMM)
-        if (rovePnP.init(COM_PORT) == false) return 0;
-    #endif
+    PnP rovePnP(COM_PORT, PNP_FILE);
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -39,9 +36,6 @@ int main() {
         else 
             ask user to input or remove from placement map
     */
-    rovePnP.components.parseCSV(PNP_FILE);
-    rovePnP.components.fillLostCuttapes();
-    rovePnP.components.printComponents();
 
     /*
         Tell user to go to first feducial
