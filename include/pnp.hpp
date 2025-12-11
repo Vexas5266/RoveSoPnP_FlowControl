@@ -110,7 +110,7 @@ class PnP {
         void feedComponent();
         void orientComponent();
 
-        bool init(const char* commPort);
+        status_t updateComponents(const char* posFile);
 
         GRBL grbl;
         Components components;

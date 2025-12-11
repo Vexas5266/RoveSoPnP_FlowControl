@@ -118,3 +118,14 @@ void PnP::orientComponent()
 
     PnP::setAngle(q, HEAD_A);
 }
+
+status_t PnP::updateComponents(const char* posFile)
+{
+    if (m_current_state != STOP) return (status_t)0; //TODO: update with new errors
+
+    components.parseCSV(posFile);
+    components.fillLostCuttapes();
+    components.printComponents();
+
+    return (status_t)1; //TODO: update with new errors
+}
