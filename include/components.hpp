@@ -20,12 +20,6 @@ struct component_t {
     string side;
 };
 
-struct coords_t {
-    float x;
-    float y;
-    float z;
-};
-
 using namespace std;
 
 class Components {

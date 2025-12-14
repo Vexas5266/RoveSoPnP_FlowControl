@@ -43,11 +43,18 @@ enum places_t {
     CNT_P
 };
 
+struct coords_t {
+    float x;
+    float y;
+    float z;
+    float r;
+};
+
 const coords_t places[CNT_P] = {
-    { 100, -100,   0 },     /* Feeder    */
-    {  50,  -50,   0 },     /* Inspect   */
-    {   0,    0,   0 },     /* PCB       */
-    {   0,    0,   0 },     /* CV Offset */
+    { 100, -100,   0,   0 },     /* Feeder    */
+    {  50,  -50,   0,   0 },     /* Inspect   */
+    {   0,    0,   0,   0 },     /* PCB       */
+    {   0,    0,   0,   0 },     /* CV Offset */
 };
 
 class PnP {
@@ -56,6 +63,8 @@ class PnP {
         state_t m_current_state = PICK;
         state_t m_previous_state = STOP;
         bool m_ok = true;
+
+        coords_t m_CV_offset = {0, 0, 0, 0};
 
     public:
 
@@ -110,6 +119,7 @@ class PnP {
         void feedComponent();
         void orientComponent();
 
+        void updateCVOffset(coords_t offset);
         status_t updateComponents(const char* posFile);
 
         GRBL grbl;

@@ -57,7 +57,7 @@ void PnP::setPosition(coords_t pos)
 
     string cmd_g = "G90";
     grbl.comm.writeLine(cmd_g);
-    cmd_g = "G1 F"+ speed + " X" + to_string(pos.x) + " Y" + to_string(pos.y) + " Z" + to_string(pos.z);
+    cmd_g = "G1 F"+ speed + " X" + to_string(pos.x + m_CV_offset.x) + " Y" + to_string(pos.y + m_CV_offset.y) + " Z" + to_string(pos.z + m_CV_offset.z);
     grbl.comm.writeLine(cmd_g);
 
     ok = grbl.waitForCommand();
@@ -114,6 +114,7 @@ void PnP::orientComponent()
 
     int q; //degrees
     q = components.getComponent_it()->rotation - orientations_a[components.getCurrentCutTape().orient];
+    q += m_CV_offset.r;
     q %= 360;
 
     PnP::setAngle(q, HEAD_A);
@@ -128,4 +129,9 @@ status_t PnP::updateComponents(const char* posFile)
     components.printComponents();
 
     return (status_t)1; //TODO: update with new errors
+}
+
+void PnP::updateCVOffset(coords_t offset)
+{
+    m_CV_offset = offset;
 }
