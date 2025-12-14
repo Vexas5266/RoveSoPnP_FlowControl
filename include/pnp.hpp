@@ -18,6 +18,8 @@
 
 using namespace std;
 
+extern int comp_count;
+
 enum state_t {
     STOP,
     PICK,
@@ -104,11 +106,18 @@ class PnP {
             return;
         }
 
+        ~PnP() {
+            cout << "PnP DeInit..." << endl;
+            grbl.comm.closeComm();
+        }
+
         state_t advanceComponent();
         void setState(state_t state);
         state_t getState();
         state_t getPreviousState();
         bool isOK();
+
+        void tickStateMachine();
 
         void handleError();
 

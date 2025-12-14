@@ -2,7 +2,115 @@
 #include "pnp.hpp"
 #include "math.h"
 
-using namespace std; 
+using namespace std;
+
+int comp_count = 0;
+
+void PnP::tickStateMachine()
+{
+    switch (getState())
+        {
+            case PICK: {
+                cout << "FC: Pick state:  " << components.getCurrentComponent().ref << endl;
+
+                /*  
+                    Set head to 0
+                    increment feeder
+                    Go to feeder coords
+                    Maybe: Increment by CV offsets
+                    Vacuum on
+                    Lower Z
+                    Up Z
+                */
+
+                
+                setState(ORIENT);
+                break;
+            }
+            case ORIENT: {
+                cout << "FC: Orient state" << endl;
+
+                /*
+                    Go to inspect coords
+                    Orient component
+                    Increment by CV rotational offsets
+                    Record CV XYZ offsets
+                */
+                // rovePnP.setAngle(90, HEAD_A);
+
+                setState(PLACE);
+                break;
+            }
+            case PLACE: {
+                cout << "FC: Place state" << endl;
+
+                /*
+                    Go to PCB coords
+                    Maybe: Increment by recorded CV XYZ offsets
+                    Lower Z
+                    Vacuum off
+                    Up Z
+                */
+
+                /*
+                    switch(Components::advanceComponent())
+                    case 0: state = stop
+                    case 1: state = pick
+                    case 2: state = reload 
+                */
+
+                comp_count++;
+                
+                state_t next_state = advanceComponent();
+                setState(next_state);
+
+                break;
+            }
+            case PAUSE: {
+                cout << "FC: Pause state" << endl;
+
+                //Wait for JSON to update
+                setState(getPreviousState());
+                break;
+            }
+            case ERROR: {
+                cout << "FC: Error state" << endl;
+                
+                //Let QT app know
+                handleError();
+                break;
+            }
+            case RELOAD: {
+                cout << "FC: Reload state:  P: " << components.getCurrentComponent().package << "  V: " << components.getCurrentComponent().value << "  Tape: " << components.getCurrentCutTape().width << endl;
+
+                /*
+                    Tell user which new cuttape to load
+                    Wait for user to reload and go
+                */
+                
+                setState(PICK);
+                break;
+            }
+            case MANUAL: {
+                cout << "FC: Manual state" << endl;
+
+                /* Wait for user to finish */
+
+                setState(getPreviousState());
+                break;
+            }
+            case STOP:
+                break;
+            
+        }
+
+        /* 
+            Poll from app interface, set state 
+        */
+
+        if( !isOK() ) setState(ERROR);
+
+}
 
 state_t PnP::advanceComponent()
 {
