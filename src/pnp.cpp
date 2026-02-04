@@ -1,6 +1,7 @@
 
 #include "pnp.hpp"
 #include "math.h"
+#include <thread>
 
 using namespace std;
 
@@ -8,13 +9,12 @@ int comp_count = 0;
 
 void PnP::tickStateMachine()
 {
-    switch (getState())
+    switch (m_current_state)
         {
             case PICK: {
                 cout << "FC: Pick state:  " << components.getCurrentComponent().ref << endl;
 
                 /*  
-                    Set head to 0
                     increment feeder
                     Go to feeder coords
                     Maybe: Increment by CV offsets
@@ -23,12 +23,15 @@ void PnP::tickStateMachine()
                     Up Z
                 */
 
+                feedComponent();
+                setPosition_Global(places[FEEEDER_P]);
+                pickComponent();
                 
                 setState(ORIENT);
                 break;
             }
             case ORIENT: {
-                cout << "FC: Orient state" << endl;
+                cout << "FC: Orient state:  " << components.getCurrentComponent().ref << endl;
 
                 /*
                     Go to inspect coords
@@ -36,13 +39,18 @@ void PnP::tickStateMachine()
                     Increment by CV rotational offsets
                     Record CV XYZ offsets
                 */
-                // rovePnP.setAngle(90, HEAD_A);
+                
+                setPosition_Global(places[INSPECT_P]);
+                orientComponent(); //Cancel out rotation in pocket
+
+                coords_t comp_offset = {0, 0, 0, 0}; //Get from CV
+                updateCVOffset(comp_offset);
 
                 setState(PLACE);
                 break;
             }
             case PLACE: {
-                cout << "FC: Place state" << endl;
+                cout << "FC: Place state:  " << components.getCurrentComponent().ref  << endl;
 
                 /*
                     Go to PCB coords
@@ -51,6 +59,10 @@ void PnP::tickStateMachine()
                     Vacuum off
                     Up Z
                 */
+
+                setPosition_PCB({components.getCurrentComponent().posX, components.getCurrentComponent().posY, 0, components.getCurrentComponent().rotation});
+                placeComponent();
+
 
                 /*
                     switch(Components::advanceComponent())
@@ -157,75 +169,131 @@ void PnP::handleError()
     PnP::setState(STOP);
 }
 
-void PnP::setPosition(coords_t pos)
+void PnP::setPosition_PCB(coords_t pos)
 {
     if (!m_ok) return;
 
     bool ok = true;
 
-    string cmd_g = "G90";
-    grbl.comm.writeLine(cmd_g);
-    cmd_g = "G1 F"+ speed + " X" + to_string(pos.x + m_CV_offset.x) + " Y" + to_string(pos.y + m_CV_offset.y) + " Z" + to_string(pos.z + m_CV_offset.z);
-    grbl.comm.writeLine(cmd_g);
+    //Change to PCB workspace
+    string cmd_g = "G55";
+    ok = grbl.sendCommand(cmd_g);
 
-    ok = grbl.waitForCommand();
-    if (ok == GRBL_OK) ok = grbl.waitForMotion();
+    cmd_g = "G90";
+    ok = grbl.sendCommand(cmd_g);
+    
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " X" + to_string(pos.x + m_CV_offset.x) + " Y" + to_string(pos.y + m_CV_offset.y);
+    if (ok) ok = grbl.sendMotion(cmd_g);
+
+    if (ok) incrementHead(pos.r + m_CV_offset.r);
 
     m_ok = ok;
 }
 
-void PnP::setAngle(int degrees, char axis)
+void PnP::setPosition_Global(coords_t pos)
 {
     if (!m_ok) return;
 
     bool ok = true;
 
-    string cmd_g = "G90";
-    grbl.comm.writeLine(cmd_g);
-    cmd_g = "G1 F" + speed + " " + to_string(axis) + to_string(degrees);
-    grbl.comm.writeLine(cmd_g);
+    //Change to global workspace
+    string cmd_g = "G54";
+    ok = grbl.sendCommand(cmd_g);
 
-    ok = grbl.waitForCommand();
-    if (ok == GRBL_OK) ok = grbl.waitForMotion();
+    cmd_g = "G90";
+    ok = grbl.sendCommand(cmd_g);
+    
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " X" + to_string(pos.x) + " Y" + to_string(pos.y);
+    if (ok) grbl.sendMotion(cmd_g);
 
     m_ok = ok;
 }
 
-void PnP::incrementAngle(int degrees, char axis)
+void PnP::incrementHead(int degrees)
 {
     if (!m_ok) return;
 
     bool ok = true;
 
     string cmd_g = "G91";
-    grbl.comm.writeLine(cmd_g);
-    cmd_g = "G1 F" + speed + " " + to_string(axis) + to_string(degrees);
-    grbl.comm.writeLine(cmd_g);
+    ok = grbl.sendCommand(cmd_g);
 
-    ok = grbl.waitForCommand();
-    if (ok == GRBL_OK) ok = grbl.waitForMotion();
+    cmd_g = "G1 F" + to_string(PNP_SPEED) + " A" + to_string(degrees);
+    if (ok) grbl.sendMotion(cmd_g);
 
     m_ok = ok;
 }
 
 void PnP::feedComponent()
 {
+    if (!m_ok) return;
 
-    int q; //degrees
-    q = components.getCurrentCutTape().pitch * ( 360 / ( 2*M_PI * SPROCKT_R ) );
-    PnP::incrementAngle(q, FEEDER_A);
+    bool ok = true;
 
+    string cmd_g = "G91";
+    ok = grbl.sendCommand(cmd_g);
+
+    cmd_g = "G1 F" + to_string(PNP_SPEED) + " B" + to_string(components.getCurrentCutTape().pitch);
+    if (ok) grbl.sendMotion(cmd_g);
+
+    m_ok = ok;
 }
 
 void PnP::orientComponent()
 {
 
     int q; //degrees
-    q = components.getComponent_it()->rotation - orientations_a[components.getCurrentCutTape().orient];
-    q += m_CV_offset.r;
-    q %= 360;
+    q = -(orientations_a[components.getCurrentCutTape().orient]);
 
-    PnP::setAngle(q, HEAD_A);
+    cout << "   Orient: " << q << endl;
+
+    incrementHead(q);
+}
+
+void PnP::pickComponent()
+{
+    cout << "   Picking..." << endl;
+    if (!m_ok) return;
+
+    bool ok = true;
+
+    string cmd_g = "G90";
+    ok = grbl.sendCommand(cmd_g);
+    
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " Z0";
+    if (ok) grbl.sendMotion(cmd_g);
+
+    //Vacuum on
+
+    this_thread::sleep_for(chrono::milliseconds(500));
+
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " Z" + to_string(Z_TRAVEL);
+    if (ok) grbl.sendMotion(cmd_g);
+
+    m_ok = ok;
+}
+
+void PnP::placeComponent()
+{
+    cout << "   Placing..." << endl;
+    if (!m_ok) return;
+
+    bool ok = true;
+
+    string cmd_g = "G90";
+    ok = grbl.sendCommand(cmd_g);
+    
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " Z0";
+    if (ok) grbl.sendMotion(cmd_g);
+
+    //Vacuum off
+
+    this_thread::sleep_for(chrono::milliseconds(500));
+
+    cmd_g = "G1 F"+ to_string(PNP_SPEED) + " Z" + to_string(Z_TRAVEL);
+    if (ok) grbl.sendMotion(cmd_g);
+
+    m_ok = ok;
 }
 
 status_t PnP::updateComponents(const char* posFile)
@@ -242,4 +310,19 @@ status_t PnP::updateComponents(const char* posFile)
 void PnP::updateCVOffset(coords_t offset)
 {
     m_CV_offset = offset;
+}
+
+void PnP::readFiducials()
+{
+    /*
+        Manually jog to feducials
+        Record offsets {x, y, z?, r} (not for m_CV_offset)
+        Set GRBL workspace for PCB
+    */
+
+    coords_t PCB_offset = {0, 160, 0, 0}; //Get from CV
+
+    string cmd_g = "G10 L2 P2 X" + to_string(PCB_offset.x) + " Y" + to_string(PCB_offset.y) + " A" + to_string(PCB_offset.r);
+    grbl.sendCommand(cmd_g);
+
 }

@@ -1,6 +1,4 @@
 #include <math.h>
-
-#include <thread>
 #include <chrono>
 
 #include "pnp.hpp"
@@ -8,9 +6,7 @@
 using namespace std;
 
 #define PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
-#define COM_PORT "/dev/tty.wchusbserial130"
-
-void FC_msSleep(long int dur); //in seconds
+#define COM_PORT "/dev/tty.wchusbserial1220"
 
 // Need to set initial offsets from testing for Z and A axes
 
@@ -66,9 +62,4 @@ int main() {
     cout << "Placed: " << comp_count << endl;
 
     return 0;
-}
-
-void FC_msSleep(long int dur)
-{
-    this_thread::sleep_for(chrono::milliseconds(dur));
 }

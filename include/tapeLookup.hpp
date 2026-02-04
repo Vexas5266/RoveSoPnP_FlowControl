@@ -29,12 +29,12 @@ struct cuttape_t {
 
 
 const int orientations_a[CNT_O] = {
-    0,   /* NA */
-    90,  /* C1 */
-    0,   /* C2 */
-    -90, /* C3 */
-    180, /* C4 */
-    0,   /* M1 */
+    0,      /* NA */
+    0,      /* C1 */
+    -90,    /* C2 */
+    180,    /* C3 */
+    90,     /* C4 */
+    -90,    /* M1 */
 };
 
 extern map<string, cuttape_t> cut_tape_map;

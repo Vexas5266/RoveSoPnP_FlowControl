@@ -15,6 +15,8 @@
 #define SPROCKT_R 10 //mm
 #define FEEDER_A 'B'
 #define HEAD_A 'A'
+#define Z_TRAVEL 10
+#define PNP_SPEED 1000
 
 using namespace std;
 
@@ -38,10 +40,9 @@ enum status_t {
 };
 
 enum places_t {
+    ORIGIN_P,
     FEEEDER_P,
     INSPECT_P,
-    PCB_P,
-    CV_OFFSET_P,
     CNT_P
 };
 
@@ -53,10 +54,9 @@ struct coords_t {
 };
 
 const coords_t places[CNT_P] = {
-    { 100, -100,   0,   0 },     /* Feeder    */
-    {  50,  -50,   0,   0 },     /* Inspect   */
-    {   0,    0,   0,   0 },     /* PCB       */
-    {   0,    0,   0,   0 },     /* CV Offset */
+    { 0, 0,   0,   0 }, /* Origin */
+    { 50, 20,   0,   0 },     /* Feeder    */
+    {  100,  70,   0,   0 },     /* Inspect   */
 };
 
 class PnP {
@@ -101,6 +101,10 @@ class PnP {
             cout << "Sending GRBL setup commands..." << endl;
             //TODO: Add setup commands (homing, feed, units, etc.)
 
+            cout << "Getting PCB Offsets..." << endl;
+
+            readFiducials();
+
             cout << "PnP Init Complete." << endl;
 
             return;
@@ -121,15 +125,18 @@ class PnP {
 
         void handleError();
 
-        void setPosition(coords_t pos);
-        void setAngle(int degrees, char axis);
-        void incrementAngle(int degrees, char axis);
-
+        void setPosition_Global(coords_t pos);
+        void setPosition_PCB(coords_t pos);
+        void incrementHead(int degrees);
+        
+        void pickComponent();
+        void placeComponent();
         void feedComponent();
         void orientComponent();
 
         void updateCVOffset(coords_t offset);
         status_t updateComponents(const char* posFile);
+        void readFiducials();
 
         GRBL grbl;
         Components components;

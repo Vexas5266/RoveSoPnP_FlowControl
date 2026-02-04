@@ -15,9 +15,7 @@ using namespace std;
 #define SERIAL_TIMEOUT 15
 
 #define EN_ECHO false
-#define INIT_COMM false
-
-const string speed = "300";
+#define INIT_COMM true
 
 class Comm {
     private:
