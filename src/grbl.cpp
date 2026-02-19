@@ -44,6 +44,7 @@ bool GRBL::waitForMotion()
 
     #if (EN_GRBL_STAT)
         if (ok == GRBL_OK) cout << "Motion: Complete" << endl;
+        else cout << "Motion: Error" << endl;
     #endif
 
     return ok;

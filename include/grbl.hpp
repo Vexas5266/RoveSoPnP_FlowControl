@@ -8,7 +8,7 @@
 #define GRBL_TIMEOUT 60 //seconds
 #define GRBL_OK true
 
-#define EN_GRBL_STAT false
+#define EN_GRBL_STAT true
 
 typedef enum {
     IDLE_G,

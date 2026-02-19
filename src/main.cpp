@@ -6,7 +6,7 @@
 using namespace std;
 
 #define PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
-#define COM_PORT "/dev/tty.wchusbserial1220"
+#define COM_PORT "/dev/tty.usbmodem112401"
 
 // Need to set initial offsets from testing for Z and A axes
 
@@ -50,6 +50,8 @@ int main() {
         See how this feducial is rotated relative to first (on Z)
         Calculate board Z axis rotation
     */
+
+    return 0;
 
     while (rovePnP.getState() != STOP)
     {

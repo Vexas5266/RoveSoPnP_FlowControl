@@ -64,7 +64,6 @@ class PnP {
 
         state_t m_current_state = PICK;
         state_t m_previous_state = STOP;
-        bool m_ok = true;
 
         coords_t m_CV_offset = {0, 0, 0, 0};
 
@@ -90,12 +89,18 @@ class PnP {
                 return;
             #endif
 
+            //Flush startup
+            this_thread::sleep_for(chrono::milliseconds(5000));
+            grbl.comm.readLine(); //Flush return
+            cout << "GRBL Startup:  ";
+            grbl.comm.readLine(); //Startup
+
             //Init GRBL
             cout << "GRBL Initializing..." << endl;
-
-            //Flush startup
-            this_thread::sleep_for(chrono::milliseconds(2000));
-            cout << "GRBL Startup:  " << grbl.comm.readLine() << endl;
+            grbl.comm.writeLine("?");
+            cout << "Startup Status: ";
+            grbl.comm.readLine(); //Status
+            grbl.comm.readLine(); //Flush ok
 
             //Send GRBL setup commands
             cout << "Sending GRBL setup commands..." << endl;
@@ -119,11 +124,8 @@ class PnP {
         void setState(state_t state);
         state_t getState();
         state_t getPreviousState();
-        bool isOK();
 
         void tickStateMachine();
-
-        void handleError();
 
         void setPosition_Global(coords_t pos);
         void setPosition_PCB(coords_t pos);

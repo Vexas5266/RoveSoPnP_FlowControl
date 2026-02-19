@@ -139,9 +139,9 @@ TO DO
     - QT sets com port and csv file
     - Test functions with pen plotter
     - Make init commands
-    - Fix PnP commands with new sendCommand()
+        - Homing
 
-    - Handle 3 feducials from CSV
+    - Handle 3 feducials from CSV, set coordinate space
     - Add error handling that cascades up to UI, enum
         - Let UI handle errors, just return error, keep track of state
 
@@ -159,3 +159,12 @@ Feeder B
 Vacuum using spindel
 Auto home
 Laser for LED
+
+GRBL Configuration:
+16 Microsteps
+$100=79.877 (X1)
+$101=80.141 (Y)
+$103=1.111111 (A) Half step (M1=high, M2=low, M3=low)
+$105=79.877 (X2)
+
+Borethrough: 1.8deg/step
