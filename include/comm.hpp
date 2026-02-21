@@ -14,8 +14,8 @@ using namespace std;
 #define BAUD B115200
 #define SERIAL_TIMEOUT 15
 
-#define EN_ECHO true
-#define INIT_COMM true
+#define EN_ECHO false
+#define INIT_COMM false
 
 class Comm {
     private:

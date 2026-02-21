@@ -132,7 +132,7 @@ NOT TESTED:
 
 TO DO 
     - Sending data between QT and FC
-    - Movement with PnP functions
+    - Make Markdown file
     - Vacuum control
     - Component feeder
     - Head rotation
@@ -140,8 +140,13 @@ TO DO
     - Test functions with pen plotter
     - Make init commands
         - Homing
-
-    - Handle 3 feducials from CSV, set coordinate space
+    - Filling in lost components from user
+    - Handle 3 fiducials from CSV, set coordinate space
+    - Handle CV offsets and component count in components (maybe rename to board?)
+    - Ignore fiducials in map
+    - Idle state if no CSV file, job finished, or CSV file has missing components
+    - Put into reload state first
+    - Components constructor, PNP class tracks a pointer to components object
     - Add error handling that cascades up to UI, enum
         - Let UI handle errors, just return error, keep track of state
 

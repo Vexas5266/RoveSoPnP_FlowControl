@@ -24,6 +24,7 @@ extern int comp_count;
 
 enum state_t {
     STOP,
+    IDLE,
     PICK,
     ORIENT,
     PLACE,
@@ -61,59 +62,17 @@ const coords_t places[CNT_P] = {
 
 class PnP {
     private:
+        unique_ptr<Components> m_components;
 
-        state_t m_current_state = PICK;
+        state_t m_current_state = IDLE;
         state_t m_previous_state = STOP;
+        uint8_t m_time = 0;
 
         coords_t m_CV_offset = {0, 0, 0, 0};
 
     public:
 
-        PnP(const char* commPort, const char* posFile) {
-
-            cout << "Init PnP..." << endl;
-
-            cout << "Parse CSV..." << endl;
-            components.parseCSV(posFile);
-            components.fillLostCuttapes();
-            components.printComponents();
-
-            #if (INIT_COMM)
-                //Start comm, fill csv
-                cout << "Init Comm..." << endl;
-                if (grbl.comm.setupComm(commPort) == false) {
-                    cout << "COM SETUP FAILED" << endl;
-                    return;
-                }
-            #else
-                return;
-            #endif
-
-            //Flush startup
-            this_thread::sleep_for(chrono::milliseconds(5000));
-            grbl.comm.readLine(); //Flush return
-            cout << "GRBL Startup:  ";
-            grbl.comm.readLine(); //Startup
-
-            //Init GRBL
-            cout << "GRBL Initializing..." << endl;
-            grbl.comm.writeLine("?");
-            cout << "Startup Status: ";
-            grbl.comm.readLine(); //Status
-            grbl.comm.readLine(); //Flush ok
-
-            //Send GRBL setup commands
-            cout << "Sending GRBL setup commands..." << endl;
-            //TODO: Add setup commands (homing, feed, units, etc.)
-
-            cout << "Getting PCB Offsets..." << endl;
-
-            readFiducials();
-
-            cout << "PnP Init Complete." << endl;
-
-            return;
-        }
+        PnP(const char* commPort);
 
         ~PnP() {
             cout << "PnP DeInit..." << endl;
@@ -137,11 +96,10 @@ class PnP {
         void orientComponent();
 
         void updateCVOffset(coords_t offset);
-        status_t updateComponents(const char* posFile);
+        void updateComponents(const char* posFile);
         void readFiducials();
 
         GRBL grbl;
-        Components components;
 
 };
 

@@ -5,7 +5,6 @@
 
 using namespace std;
 
-#define PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
 #define COM_PORT "/dev/tty.usbmodem112401"
 
 // Need to set initial offsets from testing for Z and A axes
@@ -20,7 +19,7 @@ int main() {
 
     */
 
-    PnP rovePnP(COM_PORT, PNP_FILE);
+    PnP rovePnP(COM_PORT);
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -51,7 +50,7 @@ int main() {
         Calculate board Z axis rotation
     */
 
-    return 0;
+
 
     while (rovePnP.getState() != STOP)
     {
@@ -61,7 +60,6 @@ int main() {
     }
 
     cout << "FC: Stop state" << endl;
-    cout << "Placed: " << comp_count << endl;
 
     return 0;
 }

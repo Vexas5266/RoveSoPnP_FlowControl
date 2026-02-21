@@ -17,13 +17,12 @@ enum orientation_t {
 };
 
 struct cuttape_t {
+    int ID;
     float pitch;
     float width;
     orientation_t orient;
 
-    bool operator<(const cuttape_t& other) const {
-        return pitch < other.pitch;
-    }
+    bool operator<(const cuttape_t& other) const { return ID < other.ID; }
 };
 
 

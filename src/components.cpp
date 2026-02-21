@@ -1,9 +1,18 @@
 
 #include "components.hpp"
 
-static string parseItemString(stringstream &s);
-static float parseItemFloat(stringstream &s);
-static int parseItemInt(stringstream &s);
+Components::Components(const char* csvFile)
+{
+    ifstream file(csvFile);
+    parseCSV(file);
+
+    fillLostCuttapes();
+
+    printComponents();
+
+    m_cuttape_it = m_placement_map.begin();
+    m_component_it = m_cuttape_it->second.begin();
+}
 
 static string parseItemString(stringstream &s)
 {
@@ -30,12 +39,11 @@ static int parseItemInt(stringstream &s)
     return stoi(data);
 }
 
-void Components::parseCSV(const char* csvFile)
+void Components::parseCSV(ifstream& filestream)
 {
-    ifstream file(csvFile);
     string line;
-    getline(file, line, '\n');
-    while (getline(file, line, '\n')) {
+    getline(filestream, line, '\n');
+    while (getline(filestream, line, '\n')) {
         stringstream ss(line);
         component_t component = {
             parseItemString(ss), //ref
@@ -49,8 +57,6 @@ void Components::parseCSV(const char* csvFile)
 
         Components::addComponentLookUp(component);
     }
-    m_cuttape_it = m_placement_map.begin();
-    m_component_it = m_cuttape_it->second.begin();
 }
 
 void Components::addComponentLookUp(component_t component)
@@ -71,7 +77,7 @@ void Components::addComponentLookUp(component_t component)
         m_notInLookup[{component.value, component.package}].push_back(component);
     } else {
         // cout << "Found cut tape!!  " << component.ref << endl;
-        cuttape = {look_it->second.pitch, look_it->second.width, look_it->second.orient};
+        cuttape = {look_it->second.ID, look_it->second.pitch, look_it->second.width, look_it->second.orient};
         m_placement_map[{component.value, cuttape}].push_back(component);
     }
 
@@ -84,7 +90,7 @@ void Components::fillLostCuttapes()
     while (lost_cuttape_it != m_notInLookup.end())
     {
         //Ask for cut tape info from user
-        cuttape_t user_cuttape = {-1, -2, NA_O};
+        cuttape_t user_cuttape = {0, -1, -2, NA_O};
         vector<component_t>::iterator individual_comp_it = lost_cuttape_it->second.begin();
         while (individual_comp_it != lost_cuttape_it->second.end())
         {
@@ -101,25 +107,21 @@ component_t Components::getCurrentComponent()
     return *m_component_it;
 }
 
-vector<component_t>::iterator Components::getComponent_it()
+components_status_t Components::incrementCurrentComponent()
 {
-    return m_component_it;
-}
+    components_status_t status = SAME_CUTTAPE;
 
-void Components::incrementCurrentComponent()
-{
     m_component_it++;
-}
+    if (m_component_it == m_cuttape_it->second.end())
+    {
+        m_cuttape_it++;
+        m_component_it = m_cuttape_it->second.begin();
+        status = CHANGE_CUTTAPE;
+    }
 
-void Components::incrementCurrentCutTape()
-{
-    m_cuttape_it++;
-    m_component_it = m_cuttape_it->second.begin();
-}
+    if (m_cuttape_it == m_placement_map.end()) status = FINAL_CUTTAPE;
 
-map<tuple<string, cuttape_t>, vector<component_t>>::iterator Components::getCutTape_it()
-{
-    return m_cuttape_it;
+    return status;
 }
 
 cuttape_t Components::getCurrentCutTape()
@@ -127,9 +129,9 @@ cuttape_t Components::getCurrentCutTape()
     return get<1>(m_cuttape_it->first);
 }
 
-map<tuple<string, cuttape_t>, vector<component_t>>* Components::getPlacementMap()
+map<tuple<string, cuttape_t>, vector<component_t>> Components::getPlacementMap()
 {
-    return &m_placement_map;
+    return m_placement_map;
 }
 
 void Components::printComponents()
@@ -139,7 +141,7 @@ void Components::printComponents()
     vector<component_t>::iterator c_it = u_it->second.begin();
     while (u_it != m_placement_map.end())
     {
-        cout << "Ref:" << c_it->ref << " Val:" << c_it->value << " Width:" << get<1>(u_it->first).width << " Pkg:" << c_it->package << endl;
+        cout << "Ref:" << c_it->ref << " Val:" << c_it->value << " CuttapeID:" << get<1>(u_it->first).ID << " Pkg:" << c_it->package << endl;
 
         c_it++;
         count++;

@@ -6,9 +6,11 @@
 #include <iostream>
 
 #define GRBL_TIMEOUT 60 //seconds
+#define GRBL_WAIT_INTERVAL 1000 //ms
 #define GRBL_OK true
+#define GRBL_FAST_MODE true
 
-#define EN_GRBL_STAT true
+#define EN_GRBL_STAT false
 
 typedef enum {
     IDLE_G,

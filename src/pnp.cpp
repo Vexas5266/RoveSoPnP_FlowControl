@@ -5,14 +5,77 @@
 
 using namespace std;
 
+#define ARM_PNP_FILE "../board/ArmBoard_Hardware-all-pos.csv"
+#define CORE_PNP_FILE "../board/CoreBoard-all-pos.csv"
+
 int comp_count = 0;
+
+PnP::PnP(const char* commPort) {
+
+    cout << "Init PnP..." << endl;
+
+    #if (INIT_COMM)
+        //Start comm, fill csv
+        cout << "Init Comm..." << endl;
+        if (grbl.comm.setupComm(commPort) == false) {
+            cout << "COM SETUP FAILED" << endl;
+            return;
+        }
+    #else
+        return;
+    #endif
+
+    //Flush startup
+    this_thread::sleep_for(chrono::milliseconds(5000));
+    grbl.comm.readLine(); //Flush return
+    cout << "GRBL Startup:  ";
+    grbl.comm.readLine(); //Startup
+
+    //Init GRBL
+    cout << "GRBL Initializing..." << endl;
+    grbl.comm.writeLine("?");
+    cout << "Startup Status: ";
+    grbl.comm.readLine(); //Status
+    grbl.comm.readLine(); //Flush ok
+
+    //Send GRBL setup commands
+    cout << "Sending GRBL setup commands..." << endl;
+    //TODO: Add setup commands (homing, feed, units, etc.)
+
+    cout << "Getting PCB Offsets..." << endl;
+
+    readFiducials();
+
+    cout << "PnP Init Complete." << endl;
+
+    return;
+}
 
 void PnP::tickStateMachine()
 {
     switch (m_current_state)
         {
+            case IDLE: {
+                cout << "FC: Idle state" << endl;
+                cout << "Placed: " << comp_count << endl;
+                /*
+                    Need to get new CSV and parse
+                    get new CV offsets
+                    Read new fidicials
+                    Reset component count
+                */
+                
+                m_time++;
+                if (m_time == 1) {
+                    updateComponents(ARM_PNP_FILE); 
+                    setState(PICK);
+                }
+                else setState(STOP);
+                comp_count = 0;
+                break;
+            }
             case PICK: {
-                cout << "FC: Pick state:  " << components.getCurrentComponent().ref << endl;
+                cout << "FC: Pick state:  " << m_components->getCurrentComponent().ref << endl;
 
                 /*  
                     increment feeder
@@ -23,7 +86,6 @@ void PnP::tickStateMachine()
                     Up Z
                 */
 
-                feedComponent();
                 setPosition_Global(places[FEEEDER_P]);
                 pickComponent();
                 
@@ -31,7 +93,7 @@ void PnP::tickStateMachine()
                 break;
             }
             case ORIENT: {
-                cout << "FC: Orient state:  " << components.getCurrentComponent().ref << endl;
+                cout << "FC: Orient state:  " << m_components->getCurrentComponent().ref << endl;
 
                 /*
                     Go to inspect coords
@@ -50,7 +112,7 @@ void PnP::tickStateMachine()
                 break;
             }
             case PLACE: {
-                cout << "FC: Place state:  " << components.getCurrentComponent().ref  << endl;
+                cout << "FC: Place state:  " << m_components->getCurrentComponent().ref  << endl;
 
                 /*
                     Go to PCB coords
@@ -60,7 +122,7 @@ void PnP::tickStateMachine()
                     Up Z
                 */
 
-                setPosition_PCB({components.getCurrentComponent().posX, components.getCurrentComponent().posY, 0, components.getCurrentComponent().rotation});
+                setPosition_PCB({m_components->getCurrentComponent().posX, m_components->getCurrentComponent().posY, 0, m_components->getCurrentComponent().rotation});
                 placeComponent();
 
 
@@ -92,7 +154,7 @@ void PnP::tickStateMachine()
                 break;
             }
             case RELOAD: {
-                cout << "FC: Reload state:  P: " << components.getCurrentComponent().package << "  V: " << components.getCurrentComponent().value << "  Tape: " << components.getCurrentCutTape().width << endl;
+                cout << "FC: Reload state:  P: " << m_components->getCurrentComponent().package << "  V: " << m_components->getCurrentComponent().value << "  Tape: " << m_components->getCurrentCutTape().ID << endl;
 
                 /*
                     Tell user which new cuttape to load
@@ -123,18 +185,16 @@ void PnP::tickStateMachine()
 
 state_t PnP::advanceComponent()
 {
-    state_t next_state = STOP;
-    components.incrementCurrentComponent();
+    state_t next_state = IDLE;
+    components_status_t status = m_components->incrementCurrentComponent();
 
-    //Handle iterators
-    if (components.getComponent_it() == components.getCutTape_it()->second.end()) 
-    {
-        components.incrementCurrentCutTape();
-        //Replace components
-        next_state = RELOAD;
-    } else next_state = PICK;
-
-    if (components.getCutTape_it() == components.getPlacementMap()->end()) next_state = STOP;
+    if (status == SAME_CUTTAPE) {
+        //Feed next component
+        feedComponent();
+        next_state = PICK;
+    }
+    else if (status == CHANGE_CUTTAPE) next_state = RELOAD;
+    else if (status == FINAL_CUTTAPE) next_state = IDLE;
 
     return next_state;
 }
@@ -177,7 +237,7 @@ void PnP::incrementHead(int degrees)
 
 void PnP::feedComponent()
 {
-    string cmd_g = "G91 G1 F" + to_string(PNP_SPEED) + " B" + to_string(components.getCurrentCutTape().pitch);
+    string cmd_g = "G91 G1 F" + to_string(PNP_SPEED) + " B" + to_string(m_components->getCurrentCutTape().pitch);
     grbl.sendMotion(cmd_g);
 }
 
@@ -185,7 +245,7 @@ void PnP::orientComponent()
 {
 
     int q; //degrees
-    q = -(orientations_a[components.getCurrentCutTape().orient]);
+    q = -(orientations_a[m_components->getCurrentCutTape().orient]);
 
     cout << "   Orient: " << q << endl;
 
@@ -200,7 +260,7 @@ void PnP::pickComponent()
 
     //Vacuum on
 
-    this_thread::sleep_for(chrono::milliseconds(500));
+    // this_thread::sleep_for(chrono::milliseconds(500));
 
     cmd_g = "G90 G1 F"+ to_string(PNP_SPEED) + " Z" + to_string(Z_TRAVEL);
     grbl.sendMotion(cmd_g);
@@ -215,21 +275,15 @@ void PnP::placeComponent()
 
     //Vacuum off
 
-    this_thread::sleep_for(chrono::milliseconds(500));
+    // this_thread::sleep_for(chrono::milliseconds(500));
 
     cmd_g = "G90 G1 F"+ to_string(PNP_SPEED) + " Z" + to_string(Z_TRAVEL);
     grbl.sendMotion(cmd_g);
 }
 
-status_t PnP::updateComponents(const char* posFile)
+void PnP::updateComponents(const char* posFile)
 {
-    if (m_current_state != STOP) return (status_t)0; //TODO: update with new errors
-
-    components.parseCSV(posFile);
-    components.fillLostCuttapes();
-    components.printComponents();
-
-    return (status_t)1; //TODO: update with new errors
+    m_components = make_unique<Components>(posFile);
 }
 
 void PnP::updateCVOffset(coords_t offset)

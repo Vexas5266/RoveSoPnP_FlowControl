@@ -45,6 +45,8 @@ bool Comm::setupComm(const char* portName)
 }
 
 string Comm::readLine() {
+    if (!INIT_COMM) return ""; 
+
     string line;
     char c;
     int timeout = SERIAL_TIMEOUT;
@@ -76,6 +78,8 @@ string Comm::readLine() {
 
 void Comm::writeLine(const string &s) 
 {
+    if (!INIT_COMM) return; 
+
     string out = s + "\n";
     int n = write(m_fd, out.c_str(), out.size());
     if (n < 0)

@@ -6,7 +6,7 @@ GRBL_status_t GRBL::pollStatus()
 {
     // Ask GRBL for a status report
     comm.writeLine("?");
-    this_thread::sleep_for(chrono::milliseconds(100));
+    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(100));
     string resp = comm.readLine(); //Get response
 
     if (waitForCommand() != GRBL_OK) return ERROR_G;
@@ -30,7 +30,7 @@ bool GRBL::waitForMotion()
         status = pollStatus();
 
         timeout--;
-        this_thread::sleep_for(chrono::milliseconds(1000));
+        if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(GRBL_WAIT_INTERVAL));
     } while ((status == RUN_G) && (timeout > 0));
     
     if (timeout <= 0) {
@@ -66,7 +66,7 @@ bool GRBL::sendCommand(string cmd_g)
 {
     bool ok = true;
     comm.writeLine(cmd_g);
-    this_thread::sleep_for(chrono::milliseconds(50));
+    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(50));
     ok = waitForCommand();
 
     return ok;
@@ -78,7 +78,7 @@ bool GRBL::sendMotion(string motion_g)
     bool ok = true;
 
     ok = sendCommand(motion_g);
-    this_thread::sleep_for(chrono::milliseconds(50));
+    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(50));
     if (ok == GRBL_OK) ok = waitForMotion();
 
     return ok;
