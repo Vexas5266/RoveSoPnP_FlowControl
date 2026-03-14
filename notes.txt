@@ -1,20 +1,8 @@
 == Coordinate System ==
 Z=0: Bed
-Origin: Top left corner
+Origin: Bottom left corner
 A: Rotation axis
 In mm
-
-Z+
-/\
-\/
-Z-
- O X- <-------> X+
-Y+
-/\
-||
-||
-\/
-Y-
 
 == G-Code Refrence ==
 http://wiki.fluidnc.com/en/features/supported_gcodes
@@ -29,12 +17,7 @@ G92 Xn Yn Zn        (Set current pos to given coords)
 G94                 (Units per minute mode)
 
 
-== TODO ==
- Have user remove large SMD components
- - Order components in CSV by same component
- - Generate G-Code, wait for computer vision, wait for user to load new components
- - Needs to wait for machine to be idle
-
+== Procedure ==
  0. Calibrate, home, setup
  1. Components components
  2. Order by component, set diff from last
@@ -119,34 +102,26 @@ Board Needs:
     LED support
     Vacuum motor
 
-TESTED:
-    - CSV parses and puts in order of package and value
-    - State machine goes Pick -> orient -> place -> reload properly
-    - Assigning cut tapes to sets of components
-
-NOT TESTED:
-    - Error states with PnP_ok
-    - Sending GCode 
-    - Going back to previous state after manual/pause
-    - Setting state via QT
-
 TO DO 
     - Sending data between QT and FC
+        - Pause, manual, stop states
+        - Going to previous state
     - Make Markdown file
-    - Vacuum control
+    - Test: Vacuum control, picking and placing with Z axis
     - Component feeder
-    - Head rotation
     - QT sets com port and csv file
-    - Test functions with pen plotter
-    - Make init commands
-        - Homing
-    - Filling in lost components from user
+    - Test orient pnp function
+    - Homing
+
+    - Filling in lost components from UI
     - Handle 3 fiducials from CSV, set coordinate space
     - Handle CV offsets and component count in components (maybe rename to board?)
     - Ignore fiducials in map
     - Idle state if no CSV file, job finished, or CSV file has missing components
-    - Put into reload state first
-    - Components constructor, PNP class tracks a pointer to components object
+    - Add get XY position from GRBL
+    - Get rid of lost map and mark lost cuttapes with ID of -1
+    - Have custom data types for strings etc...
+
     - Add error handling that cascades up to UI, enum
         - Let UI handle errors, just return error, keep track of state
 

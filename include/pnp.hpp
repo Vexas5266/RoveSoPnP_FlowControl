@@ -9,7 +9,7 @@
 #include <iostream>
 #include "grbl.hpp"
 #include "tapeLookup.hpp"
-#include "components.hpp"
+#include "board.hpp"
 
 #define GRBL_OK true
 #define SPROCKT_R 10 //mm
@@ -20,8 +20,6 @@
 
 using namespace std;
 
-extern int comp_count;
-
 enum state_t {
     STOP,
     IDLE,
@@ -31,13 +29,8 @@ enum state_t {
     PAUSE,
     ERROR,
     RELOAD,
+    SETUP,
     MANUAL
-};
-
-enum status_t {
-    GOOD_E,
-    TIMEOUT_E,
-    RESPONSE_E
 };
 
 enum places_t {
@@ -45,13 +38,6 @@ enum places_t {
     FEEEDER_P,
     INSPECT_P,
     CNT_P
-};
-
-struct coords_t {
-    float x;
-    float y;
-    float z;
-    float r;
 };
 
 const coords_t places[CNT_P] = {
@@ -67,8 +53,6 @@ class PnP {
         state_t m_current_state = IDLE;
         state_t m_previous_state = STOP;
         uint8_t m_time = 0;
-
-        coords_t m_CV_offset = {0, 0, 0, 0};
 
     public:
 
@@ -95,9 +79,7 @@ class PnP {
         void feedComponent();
         void orientComponent();
 
-        void updateCVOffset(coords_t offset);
         void updateComponents(const char* posFile);
-        void readFiducials();
 
         GRBL grbl;
 
