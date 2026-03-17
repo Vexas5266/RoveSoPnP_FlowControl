@@ -10,6 +10,7 @@
 #include "grbl.hpp"
 #include "tapeLookup.hpp"
 #include "board.hpp"
+#include "LED.hpp"
 
 #define SPROCKT_R 10 //mm
 #define FEEDER_A 'B'
@@ -65,6 +66,8 @@ class FlowControl {
         void updateComponents(const char* posFile);
 
         GRBL grbl;
+        LED led1;
+        LED led2;
 
 };
 
