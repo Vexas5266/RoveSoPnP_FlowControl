@@ -1,6 +1,11 @@
 
 #include "grbl.hpp"
 
+GRBL::GRBL()
+{
+    // TODO
+}
+
 //Works
 GRBL_status_t GRBL::pollStatus() 
 {

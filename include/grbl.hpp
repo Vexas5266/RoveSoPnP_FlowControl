@@ -22,6 +22,7 @@ typedef enum {
 class GRBL {
     private:
     public:
+        GRBL();
         GRBL_status_t pollStatus();
         bool waitForMotion();
         bool waitForCommand();

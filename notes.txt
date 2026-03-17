@@ -121,6 +121,8 @@ TO DO
     - Add get XY position from GRBL
     - Get rid of lost map and mark lost cuttapes with ID of -1
     - Have custom data types for strings etc...
+    - GRBL constructor
+    - Test PWM and outputs with GRBL commands
 
     - Add error handling that cascades up to UI, enum
         - Let UI handle errors, just return error, keep track of state

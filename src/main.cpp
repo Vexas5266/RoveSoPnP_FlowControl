@@ -1,7 +1,7 @@
 #include <math.h>
 #include <chrono>
 
-#include "pnp.hpp"
+#include "flowControl.hpp"
 
 using namespace std;
 
@@ -19,7 +19,7 @@ int main() {
 
     */
 
-    PnP rovePnP(COM_PORT);
+    FlowControl rovePnP(COM_PORT);
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -52,7 +52,7 @@ int main() {
 
 
 
-    while (rovePnP.getState() != STOP)
+    while (rovePnP.getState() != FlowControlState::STOP)
     {
 
         rovePnP.tickStateMachine();
