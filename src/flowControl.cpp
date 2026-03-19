@@ -44,6 +44,8 @@ FlowControl::FlowControl(const char* commPort) {
     led1 = new LED(grbl);
     led2 = new LED(grbl);
 
+    head = new Head(grbl);
+
     return;
 }
 

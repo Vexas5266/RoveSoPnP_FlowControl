@@ -1,5 +1,5 @@
-#ifndef COMPONENTS_H
-#define COMPONENTS_H
+#ifndef BOARD_H
+#define BOARD_H
 
 #include <string>
 #include <sstream>
@@ -80,4 +80,4 @@ class Components {
 
 };
 
-#endif /* COMPONENTS_H */
+#endif /* BOARD_H */

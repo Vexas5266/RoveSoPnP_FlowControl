@@ -11,12 +11,7 @@
 #include "tapeLookup.hpp"
 #include "board.hpp"
 #include "LED.hpp"
-
-#define SPROCKT_R 10 //mm
-#define FEEDER_A 'B'
-#define HEAD_A 'A'
-#define Z_TRAVEL 10
-#define PNP_SPEED 1000
+#include "head.hpp"
 
 enum class FlowControlState {
     IDLE,
@@ -24,19 +19,6 @@ enum class FlowControlState {
     PICK,
     STOP,
     COUNT
-};
-
-enum class Places {
-    ORIGIN,
-    FEEEDER,
-    INSPECT,
-    CNT
-};
-
-const coords_t places[(int)Places::CNT] = {
-    { 0, 0,   0,   0 }, /* Origin */
-    { 50, 20,   0,   0 },     /* Feeder    */
-    {  100,  70,   0,   0 },     /* Inspect   */
 };
 
 class FlowControl {
@@ -68,6 +50,8 @@ class FlowControl {
         std::shared_ptr<GRBL> grbl;
         LED* led1;
         LED* led2;
+
+        Head* head;
 
 };
 
