@@ -2,7 +2,7 @@
 #define LED_H
 
 #include "grbl.hpp"
-#include <memory.h>
+#include <memory>
 
 enum class LED_STATE {
     ON,
