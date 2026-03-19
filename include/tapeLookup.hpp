@@ -4,8 +4,6 @@
 #include <map>
 #include <string>
 
-using namespace std;
-
 enum orientation_t {
     NA_O,
     C1_O,
@@ -36,6 +34,6 @@ const int orientations_a[CNT_O] = {
     -90,    /* M1 */
 };
 
-extern map<string, cuttape_t> cut_tape_map;
+extern std::map<std::string, cuttape_t> cut_tape_map;
 
 #endif

@@ -1,7 +1,7 @@
 
 #include "tapeLookup.hpp"
 
-map<string, cuttape_t> cut_tape_map = {
+std::map<std::string, cuttape_t> cut_tape_map = {
 /*  PACKAGE          ID         PITCH      WIDTH       ORIENTATION */
     
     /*  SMD COMPONENTS  */

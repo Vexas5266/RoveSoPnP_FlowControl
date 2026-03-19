@@ -9,8 +9,6 @@
 #include <sys/ioctl.h>
 #include <thread>
 
-using namespace std;
-
 #define BAUD B115200
 #define SERIAL_TIMEOUT 15
 
@@ -23,8 +21,8 @@ class Comm {
 
     public:
         bool setupComm(const char* portName);
-        string readLine();
-        void writeLine(const string &s);
+        std::string readLine();
+        void writeLine(const std::string &s);
         int getFD();
         void closeComm();
 

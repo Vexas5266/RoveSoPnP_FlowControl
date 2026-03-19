@@ -11,13 +11,13 @@ GRBL_status_t GRBL::pollStatus()
 {
     // Ask GRBL for a status report
     comm.writeLine("?");
-    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(100));
-    string resp = comm.readLine(); //Get response
+    if (!GRBL_FAST_MODE) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::string resp = comm.readLine(); //Get response
 
     if (waitForCommand() != GRBL_OK) return ERROR_G;
 
-    if (resp.find("Idle") != string::npos) return IDLE_G;
-    if (resp.find("Run") != string::npos) return RUN_G;
+    if (resp.find("Idle") != std::string::npos) return IDLE_G;
+    if (resp.find("Run") != std::string::npos) return RUN_G;
 
     return ERROR_G;
 }
@@ -35,7 +35,7 @@ bool GRBL::waitForMotion()
         status = pollStatus();
 
         timeout--;
-        if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(GRBL_WAIT_INTERVAL));
+        if (!GRBL_FAST_MODE) std::this_thread::sleep_for(std::chrono::milliseconds(GRBL_WAIT_INTERVAL));
     } while ((status == RUN_G) && (timeout > 0));
     
     if (timeout <= 0) {
@@ -60,30 +60,30 @@ bool GRBL::waitForCommand()
 {
     bool ok = true;
 
-    string response = comm.readLine();
+    std::string response = comm.readLine();
     if (response != "ok") ok = false;
 
     return ok;
 }
 
 //Works
-bool GRBL::sendCommand(string cmd_g)
+bool GRBL::sendCommand(std::string cmd_g)
 {
     bool ok = true;
     comm.writeLine(cmd_g);
-    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(50));
+    if (!GRBL_FAST_MODE) std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ok = waitForCommand();
 
     return ok;
 }
 
 //Works
-bool GRBL::sendMotion(string motion_g)
+bool GRBL::sendMotion(std::string motion_g)
 {
     bool ok = true;
 
     ok = sendCommand(motion_g);
-    if (!GRBL_FAST_MODE) this_thread::sleep_for(chrono::milliseconds(50));
+    if (!GRBL_FAST_MODE) std::this_thread::sleep_for(std::chrono::milliseconds(50));
     if (ok == GRBL_OK) ok = waitForMotion();
 
     return ok;

@@ -44,10 +44,10 @@ bool Comm::setupComm(const char* portName)
 
 }
 
-string Comm::readLine() {
+std::string Comm::readLine() {
     if (!INIT_COMM) return ""; 
 
-    string line;
+    std::string line;
     char c;
     int timeout = SERIAL_TIMEOUT;
     while (true) {
@@ -56,7 +56,7 @@ string Comm::readLine() {
             if (c == '\n') break;
             if (c != '\r') line += c;
         } else if (timeout == 0) {
-            cout << "Comm: Timed out" << endl;
+            std::cout << "Comm: Timed out" << std::endl;
             line = "";
             //SEND TO QT
             break;
@@ -76,15 +76,15 @@ string Comm::readLine() {
     return line;
 }
 
-void Comm::writeLine(const string &s) 
+void Comm::writeLine(const std::string &s) 
 {
     if (!INIT_COMM) return; 
 
-    string out = s + "\n";
+    std::string out = s + "\n";
     int n = write(m_fd, out.c_str(), out.size());
     if (n < 0)
     {
-        cout << "Comm: Write error " << endl;
+        std::cout << "Comm: Write error " << std::endl;
         //SEND TO QT
     }
     #if (EN_ECHO)

@@ -17,13 +17,13 @@
 #define RAD2DEG(x) (180.0 * x) / M_PI
 
 struct component_t {
-    string ref;
-    string value;
-    string package;
+    std::string ref;
+    std::string value;
+    std::string package;
     float posX;
     float posY;
     float rotation;
-    string side;
+    std::string side;
 };
 
 struct coords_t {
@@ -39,18 +39,16 @@ enum components_status_t {
     FINAL_CUTTAPE
 };
 
-using namespace std;
-
 class Components {
 
     private:
-        map<tuple<string, string>, vector<component_t>> m_notInLookup;
-        map<tuple<string, cuttape_t>, vector<component_t>> m_placement_map; // <[Package, Cuttape[P W O]], <Vector of all comp with that package and cuttape>>
+        std::map<std::tuple<std::string, std::string>, std::vector<component_t>> m_notInLookup;
+        std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>> m_placement_map; // <[Package, Cuttape[P W O]], <Vector of all comp with that package and cuttape>>
 
-        map<tuple<string, cuttape_t>, vector<component_t>>::iterator m_cuttape_it;
-        vector<component_t>::iterator m_component_it;
+        std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>>::iterator m_cuttape_it;
+        std::vector<component_t>::iterator m_component_it;
 
-        vector<tuple<component_t, component_t>> m_fiducials; // <Board, manual>
+        std::vector<std::tuple<component_t, component_t>> m_fiducials; // <Board, manual>
         coords_t m_board_offset = {0, 0, 0, 0};
 
         int m_placed_components = 0;
@@ -60,16 +58,16 @@ class Components {
 
         void addComponentLookUp(component_t component);
         void fillLostCuttapes();
-        void parseCSV(ifstream& filestream);
+        void parseCSV(std::ifstream& filestream);
 
         void printComponents();
 
-        cuttape_t getCurrentCutTape() { return get<1>(m_cuttape_it->first); }
+        cuttape_t getCurrentCutTape() { return std::get<1>(m_cuttape_it->first); }
         component_t getCurrentComponent() { return *m_component_it; }
-        map<tuple<string, cuttape_t>, vector<component_t>> getPlacementMap() { return m_placement_map; }
+        std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>> getPlacementMap() { return m_placement_map; }
         int getPlacedComponents() { return m_placed_components; }
 
-        vector<tuple<component_t, component_t>> getBoardFiducials() { return m_fiducials; }
+        std::vector<std::tuple<component_t, component_t>> getBoardFiducials() { return m_fiducials; }
         void setManualFidcucials(int idx, coords_t manual_coords);
         void calculateBoardOffset();
         coords_t getBoardOffset() { return m_board_offset; }

@@ -41,7 +41,7 @@ const coords_t places[(int)Places::CNT] = {
 
 class FlowControl {
     private:
-        unique_ptr<Components> m_components;
+        std::unique_ptr<Components> m_components;
 
         FlowControlState m_current_state = FlowControlState::STOP;
         FlowControlState m_previous_state;
@@ -52,7 +52,7 @@ class FlowControl {
         FlowControl(const char* commPort);
 
         ~FlowControl() {
-            cout << "FlowControl DeInit..." << endl;
+            std::cout << "FlowControl DeInit..." << std::endl;
             grbl->comm.closeComm();
         }
 

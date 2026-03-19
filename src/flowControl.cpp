@@ -8,14 +8,14 @@
 
 FlowControl::FlowControl(const char* commPort) {
 
-    cout << "Init FlowControl..." << endl;
+    std::cout << "Init FlowControl..." << std::endl;
     grbl = std::make_shared<GRBL>();
 
     #if (INIT_COMM)
         //Start comm, fill csv
-        cout << "Init Comm..." << endl;
+        std::cout << "Init Comm..." << std::endl;
         if (grbl.comm.setupComm(commPort) == false) {
-            cout << "COM SETUP FAILED" << endl;
+            std::cout << "COM SETUP FAILED" << std::endl;
             return;
         }
     #else
@@ -23,23 +23,23 @@ FlowControl::FlowControl(const char* commPort) {
     #endif
 
     //Flush startup
-    this_thread::sleep_for(chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     grbl->comm.readLine(); //Flush return
-    cout << "GRBL Startup:  ";
+    std::cout << "GRBL Startup:  ";
     grbl->comm.readLine(); //Startup
 
     //Init GRBL
-    cout << "GRBL Initializing..." << endl;
+    std::cout << "GRBL Initializing..." << std::endl;
     grbl->comm.writeLine("?");
-    cout << "Startup Status: ";
+    std::cout << "Startup Status: ";
     grbl->comm.readLine(); //Status
     grbl->comm.readLine(); //Flush ok
 
     //Send GRBL setup commands
-    cout << "Sending GRBL setup commands..." << endl;
+    std::cout << "Sending GRBL setup commands..." << std::endl;
     //TODO: Add setup commands (homing, feed, units, etc.)
 
-    cout << "FlowControl Init Complete." << endl;
+    std::cout << "FlowControl Init Complete." << std::endl;
 
     led1 = new LED(grbl);
     led2 = new LED(grbl);
@@ -89,5 +89,5 @@ FlowControlState FlowControl::getPreviousState()
 
 void FlowControl::updateComponents(const char* posFile)
 {
-    m_components = make_unique<Components>(posFile);
+    m_components = std::make_unique<Components>(posFile);
 }

@@ -26,8 +26,8 @@ class GRBL {
         GRBL_status_t pollStatus();
         bool waitForMotion();
         bool waitForCommand();
-        bool sendCommand(string cmd_g);
-        bool sendMotion(string motion_g);
+        bool sendCommand(std::string cmd_g);
+        bool sendMotion(std::string motion_g);
         void init();
 
         Comm comm;

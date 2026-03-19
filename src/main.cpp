@@ -3,8 +3,6 @@
 
 #include "flowControl.hpp"
 
-using namespace std;
-
 #define COM_PORT "/dev/tty.usbmodem112401"
 
 // Need to set initial offsets from testing for Z and A axes
@@ -59,7 +57,7 @@ int main() {
 
     }
 
-    cout << "FC: Stop state" << endl;
+    std::cout << "FC: Stop state" << std::endl;
 
     return 0;
 }
