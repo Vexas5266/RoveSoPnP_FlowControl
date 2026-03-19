@@ -8,6 +8,9 @@ add_library(RoveFlowControl
     src/tapeLookup.cpp
     src/grbl.cpp
     src/comm.cpp
+    src/gantry.cpp
+    src/head.cpp
+    src/LED.cpp
 )
 
 target_include_directories(RoveFlowControl PUBLIC

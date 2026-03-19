@@ -11,6 +11,13 @@ FlowControl::FlowControl(const char* commPort) {
     std::cout << "Init FlowControl..." << std::endl;
     grbl = std::make_shared<GRBL>();
 
+    led1 = new LED(grbl);
+    led2 = new LED(grbl);
+
+    head = new Head(grbl);
+    gantry = new Gantry(grbl);
+    feeder = new Feeder(grbl);
+
     #if (INIT_COMM)
         //Start comm, fill csv
         std::cout << "Init Comm..." << std::endl;
@@ -40,12 +47,6 @@ FlowControl::FlowControl(const char* commPort) {
     //TODO: Add setup commands (homing, feed, units, etc.)
 
     std::cout << "FlowControl Init Complete." << std::endl;
-
-    led1 = new LED(grbl);
-    led2 = new LED(grbl);
-
-    head = new Head(grbl);
-    gantry = new Gantry(grbl);
 
     return;
 }

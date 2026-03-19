@@ -4,7 +4,7 @@
 // Untested
 void Head::increment(int degrees)
 {
-    if (m_angle >= 720) || (m_angle <= -720) m_angle = 0;
+    if ((m_angle >= 720) || (m_angle <= -720)) m_angle = 0;
 
     m_angle += degrees;
 
