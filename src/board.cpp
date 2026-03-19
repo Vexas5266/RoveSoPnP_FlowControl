@@ -161,7 +161,7 @@ void Components::printComponents()
     std::cout << "Size: " << count << std::endl;
 }
 
-void Components::setManualFidcucials(int idx, coords_t manual_coords)
+void Components::setManualFidcucials(int idx, board_coords_t manual_coords)
 {
     std::get<1>(m_fiducials[idx]).posX = manual_coords.x;
     std::get<1>(m_fiducials[idx]).posY = manual_coords.y;
@@ -170,7 +170,7 @@ void Components::setManualFidcucials(int idx, coords_t manual_coords)
 void Components::calculateBoardOffset()
 {
     int N = m_fiducials.size();
-    coords_t transform = {0, 0, 0, 0};
+    board_coords_t transform = {0, 0, 0, 0};
 
     if (N == 0) return;
     else if (N == 1)
@@ -205,13 +205,13 @@ void Components::calculateBoardOffset()
             Qx_bar += std::get<Q_MEAS>(m_fiducials[i]).posX;
             Qy_bar += std::get<Q_MEAS>(m_fiducials[i]).posY;
         }
-        coords_t centroid_P = { Px_bar * ((float)1.0/N), Py_bar * ((float)1.0/N), 0, 0};
-        coords_t centroid_Q = { Qx_bar * ((float)1.0/N), Qy_bar * ((float)1.0/N), 0, 0};
+        board_coords_t centroid_P = { Px_bar * ((float)1.0/N), Py_bar * ((float)1.0/N), 0, 0};
+        board_coords_t centroid_Q = { Qx_bar * ((float)1.0/N), Qy_bar * ((float)1.0/N), 0, 0};
 
         double sinR, cosR = 0;
         for (int i = 0; i < N; i++)
         {
-            coords_t p, q;
+            board_coords_t p, q;
             p.x = std::get<P_EXP>(m_fiducials[i]).posX - centroid_P.x;
             p.y = std::get<P_EXP>(m_fiducials[i]).posY - centroid_P.y;
             q.x = std::get<Q_MEAS>(m_fiducials[i]).posX - centroid_Q.x;
@@ -230,9 +230,9 @@ void Components::calculateBoardOffset()
     m_board_offset = transform;
 }
 
-void Components::transformToPCBCoords(coords_t* global_coords)
+void Components::transformToPCBCoords(board_coords_t* global_coords)
 {
-    coords_t new_coords;
+    board_coords_t new_coords;
 
     new_coords.x = (global_coords->x * cosf(m_board_offset.r)) - 
                    (global_coords->y * sinf(m_board_offset.r)) + m_board_offset.x;
@@ -248,9 +248,9 @@ void Components::transformToPCBCoords(coords_t* global_coords)
     *global_coords = new_coords;
 }
 
-void Components::transformToGlobalCoords(coords_t* PCB_coords)
+void Components::transformToGlobalCoords(board_coords_t* PCB_coords)
 {
-    coords_t new_coords;
+    board_coords_t new_coords;
 
     new_coords.x = (PCB_coords->x - m_board_offset.x);
     new_coords.y = (PCB_coords->y - m_board_offset.y);

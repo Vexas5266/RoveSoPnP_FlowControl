@@ -8,7 +8,7 @@ void Head::increment(int degrees)
 
     m_angle += degrees;
 
-    m_grbl->sendMotion("G90 G1 A" + (std::string)m_angle);
+    m_grbl->sendMotion("G90 G0 A" + std::to_string(m_angle));
 }
 
 // Untested

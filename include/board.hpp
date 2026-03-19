@@ -26,7 +26,7 @@ struct component_t {
     std::string side;
 };
 
-struct coords_t {
+struct board_coords_t {
     float x;
     float y;
     float z;
@@ -49,7 +49,7 @@ class Components {
         std::vector<component_t>::iterator m_component_it;
 
         std::vector<std::tuple<component_t, component_t>> m_fiducials; // <Board, manual>
-        coords_t m_board_offset = {0, 0, 0, 0};
+        board_coords_t m_board_offset = {0, 0, 0, 0};
 
         int m_placed_components = 0;
 
@@ -68,11 +68,11 @@ class Components {
         int getPlacedComponents() { return m_placed_components; }
 
         std::vector<std::tuple<component_t, component_t>> getBoardFiducials() { return m_fiducials; }
-        void setManualFidcucials(int idx, coords_t manual_coords);
+        void setManualFidcucials(int idx, board_coords_t manual_coords);
         void calculateBoardOffset();
-        coords_t getBoardOffset() { return m_board_offset; }
-        void transformToPCBCoords(coords_t* global_coords);
-        void transformToGlobalCoords(coords_t* PCB_coords);
+        board_coords_t getBoardOffset() { return m_board_offset; }
+        void transformToPCBCoords(board_coords_t* global_coords);
+        void transformToGlobalCoords(board_coords_t* PCB_coords);
 
         // After incrementing, returns if it had to move to a new cuttape, 
         // is in the same cuttape, or is at the end of the map

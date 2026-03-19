@@ -12,6 +12,7 @@
 #include "board.hpp"
 #include "LED.hpp"
 #include "head.hpp"
+#include "gantry.hpp"
 
 enum class FlowControlState {
     IDLE,
@@ -52,6 +53,7 @@ class FlowControl {
         LED* led2;
 
         Head* head;
+        Gantry* gantry;
 
 };
 

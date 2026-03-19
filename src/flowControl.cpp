@@ -45,6 +45,7 @@ FlowControl::FlowControl(const char* commPort) {
     led2 = new LED(grbl);
 
     head = new Head(grbl);
+    gantry = new Gantry(grbl);
 
     return;
 }
@@ -53,7 +54,12 @@ void FlowControl::tickStateMachine()
 {
     switch (m_current_state)
     {
-        // Main state machine
+        case FlowControlState::IDLE:
+        case FlowControlState::RELOAD:
+        case FlowControlState::PICK:
+        case FlowControlState::STOP:
+        case FlowControlState::COUNT:
+            break;
     }
 }
 
