@@ -1,5 +1,5 @@
-#include <math.h>
 #include <chrono>
+#include <math.h>
 
 #include "flowControl.hpp"
 
@@ -7,10 +7,10 @@
 
 // Need to set initial offsets from testing for Z and A axes
 
-int main() {
-
+int main()
+{
     /*
-    
+
         Ask User:
         CSV File
         Com port
@@ -24,7 +24,7 @@ int main() {
         Iterate through each tuple in placement_map
         Compare package to look up packages
             set cuttape config
-        else 
+        else
             ask user to input or remove from placement map
     */
 
@@ -48,13 +48,9 @@ int main() {
         Calculate board Z axis rotation
     */
 
-
-
     while (rovePnP.getState() != FlowControlState::STOP)
     {
-
         rovePnP.tickStateMachine();
-
     }
 
     std::cout << "FC: Stop state" << std::endl;

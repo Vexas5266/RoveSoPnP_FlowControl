@@ -1,7 +1,7 @@
 #include "LED.hpp"
 
 // Setters
-void LED::setBrightness(float brightness) 
+void LED::setBrightness(float brightness)
 {
     m_brightness = brightness;
     // m_grbl->sendCommand();
@@ -26,8 +26,17 @@ void LED::setColor(LED_COLOR color)
 }
 
 // Getters
-LED_STATE LED::getState() { return m_state; }
+LED_STATE LED::getState()
+{
+    return m_state;
+}
 
-float LED::getBrightness() { return m_brightness; }
+float LED::getBrightness()
+{
+    return m_brightness;
+}
 
-LED_COLOR LED::getColor() { return m_color; }
+LED_COLOR LED::getColor()
+{
+    return m_color;
+}
