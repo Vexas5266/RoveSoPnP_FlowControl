@@ -1,8 +1,6 @@
 #include <chrono>
 #include <math.h>
 
-#include "flowControl.hpp"
-
 #define COM_PORT "/dev/tty.usbmodem112401"
 
 // Need to set initial offsets from testing for Z and A axes
@@ -16,8 +14,6 @@ int main()
         Com port
 
     */
-
-    FlowControl rovePnP(COM_PORT);
 
     /*
         Parse CSV and fill in components, add to placement map
@@ -47,13 +43,6 @@ int main()
         See how this feducial is rotated relative to first (on Z)
         Calculate board Z axis rotation
     */
-
-    while (rovePnP.getState() != FlowControlState::STOP)
-    {
-        rovePnP.tickStateMachine();
-    }
-
-    std::cout << "FC: Stop state" << std::endl;
 
     return 0;
 }

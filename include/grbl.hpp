@@ -2,24 +2,26 @@
 #define GRBLH
 
 #include "comm.hpp"
-#include <thread>
 #include <iostream>
+#include <thread>
 
-#define GRBL_TIMEOUT 60 //seconds
-#define GRBL_WAIT_INTERVAL 1000 //ms
-#define GRBL_OK true
-#define GRBL_FAST_MODE true
+#define GRBL_TIMEOUT       60      // seconds
+#define GRBL_WAIT_INTERVAL 1000    // ms
+#define GRBL_OK            true
+#define GRBL_FAST_MODE     true
 
 #define EN_GRBL_STAT false
 
-typedef enum {
+typedef enum
+{
     IDLE_G,
     RUN_G,
     ERROR_G,
     CNT_G
 } GRBL_status_t;
 
-class GRBL {
+class GRBL
+{
     private:
     public:
         GRBL();
@@ -30,8 +32,9 @@ class GRBL {
         bool sendMotion(std::string motion_g);
         void init();
 
-        Comm comm;
+        bool isBusy() { return pollStatus() == RUN_G; }
 
+        Comm comm;
 };
 
 #endif /* GRBL_H */
