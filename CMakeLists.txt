@@ -4,14 +4,12 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_library(RoveFlowControl
     src/board.cpp
-    src/flowControl.cpp
     src/tapeLookup.cpp
     src/grbl.cpp
     src/comm.cpp
     src/gantry.cpp
     src/head.cpp
     src/LED.cpp
-    src/flowControlStateMachine.cpp
 )
 
 target_include_directories(RoveFlowControl PUBLIC

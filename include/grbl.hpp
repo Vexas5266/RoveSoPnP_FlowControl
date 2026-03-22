@@ -18,6 +18,16 @@ enum class GRBL_STATUS
     COUNT
 };
 
+struct grbl_position_t
+{
+        float x;
+        float y;
+        float z;
+        float a;
+        float b;
+        float c;
+};
+
 class GRBL
 {
     private:
@@ -25,6 +35,7 @@ class GRBL
         GRBL(const char* commPort);
         GRBL_STATUS pollStatus();
         bool isBusy();
+        grbl_position_t getMachinePosition();
         bool waitForCommand();
         bool sendCommand(std::string cmd_g);
 

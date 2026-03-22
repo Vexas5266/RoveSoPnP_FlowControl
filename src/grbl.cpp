@@ -1,5 +1,6 @@
 
 #include "grbl.hpp"
+#include <sstream>
 
 GRBL::GRBL(const char* commPort)
 {
@@ -53,6 +54,34 @@ bool GRBL::isBusy()
 {
     if (pollStatus() == GRBL_STATUS::BUSY)
         return true;
+
+    return false;
+}
+
+grbl_position_t GRBL::getMachinePosition()
+{
+    grbl_position_t ret;
+
+    comm.writeLine("?");
+    std::string resp = comm.readLine();
+    std::istringstream tokenStream(resp);
+    std::string output;
+    std::getline(tokenStream, output, ':');    // Get up to MPos:
+
+    std::getline(tokenStream, output, ',');    // X
+    ret.x = std::stof(output);
+    std::getline(tokenStream, output, ',');    // Y
+    ret.y = std::stof(output);
+    std::getline(tokenStream, output, ',');    // Z
+    ret.z = std::stof(output);
+    std::getline(tokenStream, output, ',');    // A
+    ret.a = std::stof(output);
+    std::getline(tokenStream, output, ',');    // B
+    ret.b = std::stof(output);
+    std::getline(tokenStream, output, '|');    // C
+    ret.c = std::stof(output);
+
+    return ret;
 }
 
 // Works
