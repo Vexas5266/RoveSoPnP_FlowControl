@@ -9,7 +9,7 @@
 FlowControl::FlowControl(const char* commPort)
 {
     std::cout << "Init FlowControl..." << std::endl;
-    grbl   = std::make_shared<GRBL>();
+    grbl   = std::make_shared<GRBL>(commPort);
 
     led1   = new LED(grbl);
     led2   = new LED(grbl);
@@ -18,31 +18,6 @@ FlowControl::FlowControl(const char* commPort)
     gantry = new Gantry(grbl);
     feeder = new Feeder(grbl);
 
-#if (INIT_COMM)
-    // Start comm, fill csv
-    std::cout << "Init Comm..." << std::endl;
-    if (grbl.comm.setupComm(commPort) == false)
-    {
-        std::cout << "COM SETUP FAILED" << std::endl;
-        return;
-    }
-#else
-    return;
-#endif
-
-    // Flush startup
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    grbl->comm.readLine();    // Flush return
-    std::cout << "GRBL Startup:  ";
-    grbl->comm.readLine();    // Startup
-
-    // Init GRBL
-    std::cout << "GRBL Initializing..." << std::endl;
-    grbl->comm.writeLine("?");
-    std::cout << "Startup Status: ";
-    grbl->comm.readLine();    // Status
-    grbl->comm.readLine();    // Flush ok
-
     // Send GRBL setup commands
     std::cout << "Sending GRBL setup commands..." << std::endl;
     // TODO: Add setup commands (homing, feed, units, etc.)
@@ -50,18 +25,6 @@ FlowControl::FlowControl(const char* commPort)
     std::cout << "FlowControl Init Complete." << std::endl;
 
     return;
-}
-
-void FlowControl::tickStateMachine()
-{
-    switch (m_current_state)
-    {
-        case FlowControlState::IDLE:
-        case FlowControlState::RELOAD:
-        case FlowControlState::PICK:
-        case FlowControlState::STOP:
-        case FlowControlState::COUNT: break;
-    }
 }
 
 FlowControlState FlowControl::advanceComponent()
@@ -73,10 +36,10 @@ FlowControlState FlowControl::advanceComponent()
     {
         // Feed next component
         // Tell Feeder to step forward
-        next_state = FlowControlState::PICK;
+        next_state = FlowControlState::PICKUP_SAFE_START_STATE;
     }
     else if (status == CHANGE_CUTTAPE)
-        next_state = FlowControlState::RELOAD;
+        next_state = FlowControlState::FEEDER_SAFE_START_STATE;
     else if (status == FINAL_CUTTAPE)
         next_state = FlowControlState::IDLE;
 

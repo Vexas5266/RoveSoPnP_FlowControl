@@ -1,41 +1,35 @@
 #ifndef FLOWCONTROL_H
 #define FLOWCONTROL_H
 
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <map>
-#include <vector>
-#include <iostream>
-#include "grbl.hpp"
-#include "tapeLookup.hpp"
-#include "board.hpp"
 #include "LED.hpp"
-#include "head.hpp"
-#include "gantry.hpp"
+#include "board.hpp"
 #include "feeder.hpp"
+#include "flowControlStates.hpp"
+#include "gantry.hpp"
+#include "grbl.hpp"
+#include "head.hpp"
+#include "tapeLookup.hpp"
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
-enum class FlowControlState {
-    IDLE,
-    RELOAD,
-    PICK,
-    STOP,
-    COUNT
-};
-
-class FlowControl {
+class FlowControl
+{
     private:
         std::unique_ptr<Components> m_components;
 
-        FlowControlState m_current_state = FlowControlState::STOP;
+        FlowControlState m_current_state = FlowControlState::IDLE;
         FlowControlState m_previous_state;
         uint8_t m_time = 0;
 
     public:
-
         FlowControl(const char* commPort);
 
-        ~FlowControl() {
+        ~FlowControl()
+        {
             std::cout << "FlowControl DeInit..." << std::endl;
             grbl->comm.closeComm();
         }
@@ -56,7 +50,6 @@ class FlowControl {
         Head* head;
         Gantry* gantry;
         Feeder* feeder;
-
 };
 
 #endif /* FLOWCONTROL_H */

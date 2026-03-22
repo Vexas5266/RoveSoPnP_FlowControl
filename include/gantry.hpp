@@ -4,13 +4,15 @@
 #include "grbl.hpp"
 #include <memory>
 
-struct gantry_coords_t {
-    float x;
-    float y;
-    float z;
+struct gantry_coords_t
+{
+        float x;
+        float y;
+        float z;
 };
 
-class Gantry {
+class Gantry
+{
     private:
         std::shared_ptr<GRBL> m_grbl;
 
@@ -18,6 +20,7 @@ class Gantry {
 
     public:
         Gantry(std::shared_ptr<GRBL> grbl) { m_grbl = grbl; }
+
         ~Gantry() { m_grbl = NULL; }
 
         void setGlobalPosition(float x, float y);
@@ -26,7 +29,7 @@ class Gantry {
 
         gantry_coords_t getGlobalPosition() { return m_global_position; }
 
-        const gantry_coords_t offsetCamToHead = {0}; //TODO: Measure
+        const gantry_coords_t offsetCamToHead = {0, 0, 0};    // TODO: Measure
 };
 
 #endif /* GANTRY_H */

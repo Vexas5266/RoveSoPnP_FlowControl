@@ -11,6 +11,7 @@ add_library(RoveFlowControl
     src/gantry.cpp
     src/head.cpp
     src/LED.cpp
+    src/flowControlStateMachine.cpp
 )
 
 target_include_directories(RoveFlowControl PUBLIC
