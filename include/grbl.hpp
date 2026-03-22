@@ -5,34 +5,28 @@
 #include <iostream>
 #include <thread>
 
-#define GRBL_TIMEOUT       60      // seconds
-#define GRBL_WAIT_INTERVAL 1000    // ms
-#define GRBL_OK            true
-#define GRBL_FAST_MODE     true
+#define GRBL_OK        true
+#define GRBL_FAST_MODE true
 
 #define EN_GRBL_STAT false
 
-typedef enum
+enum class GRBL_STATUS
 {
-    IDLE_G,
-    RUN_G,
-    ERROR_G,
-    CNT_G
-} GRBL_status_t;
+    IDLE,
+    BUSY,
+    ERROR,
+    COUNT
+};
 
 class GRBL
 {
     private:
     public:
-        GRBL();
-        GRBL_status_t pollStatus();
-        bool waitForMotion();
+        GRBL(const char* commPort);
+        GRBL_STATUS pollStatus();
+        bool isBusy();
         bool waitForCommand();
         bool sendCommand(std::string cmd_g);
-        bool sendMotion(std::string motion_g);
-        void init();
-
-        bool isBusy() { return pollStatus() == RUN_G; }
 
         Comm comm;
 };
