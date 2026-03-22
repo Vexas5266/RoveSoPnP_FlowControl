@@ -49,6 +49,12 @@ GRBL_STATUS GRBL::pollStatus()
     return GRBL_STATUS::ERROR;
 }
 
+bool GRBL::isBusy()
+{
+    if (pollStatus() == GRBL_STATUS::BUSY)
+        return true;
+}
+
 // Works
 bool GRBL::waitForCommand()
 {

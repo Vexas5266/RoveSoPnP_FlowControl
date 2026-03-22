@@ -24,6 +24,7 @@ class GRBL
     public:
         GRBL(const char* commPort);
         GRBL_STATUS pollStatus();
+        bool isBusy();
         bool waitForCommand();
         bool sendCommand(std::string cmd_g);
 
