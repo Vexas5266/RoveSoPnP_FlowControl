@@ -53,6 +53,7 @@ bool GRBL::isBusy()
 {
     if (pollStatus() == GRBL_STATUS::BUSY)
         return true;
+    return false;
 }
 
 // Works
