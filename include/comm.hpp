@@ -5,7 +5,6 @@
 #include <functional>
 #include <iostream>
 #include <string>
-#include <sys/ioctl.h>
 #include <termios.h>
 #include <thread>
 #include <unistd.h>
