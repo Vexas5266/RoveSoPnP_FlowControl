@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_library(RoveFlowControl
     src/board.cpp
-    src/flowControl.cpp
     src/tapeLookup.cpp
     src/grbl.cpp
     src/comm.cpp
