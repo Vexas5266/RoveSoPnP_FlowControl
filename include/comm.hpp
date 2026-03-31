@@ -1,31 +1,34 @@
-#ifndef COMM_H
-#define COMM_H
+#pragma once
 
-#include <string>
-#include <termios.h>
+#include <chrono>
 #include <fcntl.h>
-#include <unistd.h>
+#include <functional>
 #include <iostream>
+#include <string>
 #include <sys/ioctl.h>
+#include <termios.h>
 #include <thread>
+#include <unistd.h>
 
-#define BAUD B115200
-#define SERIAL_TIMEOUT 15
+#define SERIAL_TIMEOUT 10
+#define EN_ECHO        0
 
-#define EN_ECHO false
-#define INIT_COMM false
-
-class Comm {
-    private:
-        int m_fd;
-
+class Comm
+{
     public:
+        bool INIT_COMM = true;
+
         bool setupComm(const char* portName);
         std::string readLine();
-        void writeLine(const std::string &s);
+        void writeLine(const std::string& s);
         int getFD();
         void closeComm();
 
-};
+        // Callback definition for logging GRBL commands
+        using LogCallback = std::function<void(const std::string& dir, const std::string& msg)>;
+        void setLogCallback(LogCallback cb);
 
-#endif /* COMM_H */
+    private:
+        int m_fd                  = -1;
+        LogCallback m_logCallback = nullptr;
+};

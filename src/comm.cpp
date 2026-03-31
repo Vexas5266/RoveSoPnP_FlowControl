@@ -1,5 +1,9 @@
-
 #include "comm.hpp"
+
+void Comm::setLogCallback(LogCallback cb)
+{
+    m_logCallback = cb;
+}
 
 bool Comm::setupComm(const char* portName)
 {
@@ -65,9 +69,8 @@ std::string Comm::readLine()
         }
         else if (timeout == 0)
         {
-            std::cout << "Comm: Timed out" << std::endl;
+            // Removed stdout spam for cleaner terminal
             line = "";
-            // SEND TO QT
             break;
         }
         else if (n == 0 || ((n < 0) && (errno == EAGAIN || errno == EWOULDBLOCK)))
@@ -83,8 +86,13 @@ std::string Comm::readLine()
     if (!line.empty())
     {
 #if (EN_ECHO)
-        cout << "GRBL: " << line << endl;
+        std::cout << "GRBL: " << line << std::endl;
 #endif
+        // Emit the received line to the terminal UI
+        if (m_logCallback)
+        {
+            m_logCallback("RX", line);
+        }
     }
 
     return line;
@@ -100,11 +108,17 @@ void Comm::writeLine(const std::string& s)
     if (n < 0)
     {
         std::cout << "Comm: Write error " << std::endl;
-        // SEND TO QT
     }
+
 #if (EN_ECHO)
-    cout << "Sent: " << s << endl;
+    std::cout << "Sent: " << s << std::endl;
 #endif
+
+    // Emit the sent line to the terminal UI
+    if (m_logCallback)
+    {
+        m_logCallback("TX", s);
+    }
 }
 
 int Comm::getFD()
