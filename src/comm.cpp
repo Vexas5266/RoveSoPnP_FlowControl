@@ -5,13 +5,17 @@ void Comm::setLogCallback(LogCallback cb)
     m_logCallback = cb;
 }
 
-bool Comm::setupComm(const char* portName)
+void Comm::connect(const char* portName)
 {
+    if (m_connected)
+        disconnect();
+
     m_fd = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (m_fd < 0)
     {
         std::cerr << "Error opening " << portName << std::endl;
-        return false;
+        m_connected = false;
+        return;
     }
 
     // Configure port
@@ -19,8 +23,8 @@ bool Comm::setupComm(const char* portName)
     if (tcgetattr(m_fd, &tty) != 0)
     {
         std::cerr << "Error from tcgetattr" << std::endl;
-        close(m_fd);
-        return false;
+        disconnect();
+        return;
     }
 
     cfsetospeed(&tty, B115200);
@@ -42,16 +46,23 @@ bool Comm::setupComm(const char* portName)
     if (tcsetattr(m_fd, TCSANOW, &tty) != 0)
     {
         std::cerr << "Error from tcsetattr" << std::endl;
-        close(m_fd);
-        return false;
+        disconnect();
+        return;
     }
 
-    return true;
+    m_connected = true;
+    return;
+}
+
+void Comm::disconnect()
+{
+    close(m_fd);
+    m_connected = false;
 }
 
 std::string Comm::readLine()
 {
-    if (!INIT_COMM)
+    if (!m_connected)
         return "";
 
     std::string line;
@@ -71,6 +82,7 @@ std::string Comm::readLine()
         {
             // Removed stdout spam for cleaner terminal
             line = "";
+            disconnect();
             break;
         }
         else if (n == 0 || ((n < 0) && (errno == EAGAIN || errno == EWOULDBLOCK)))
@@ -85,9 +97,6 @@ std::string Comm::readLine()
 
     if (!line.empty())
     {
-#if (EN_ECHO)
-        std::cout << "GRBL: " << line << std::endl;
-#endif
         // Emit the received line to the terminal UI
         if (m_logCallback)
         {
@@ -100,33 +109,24 @@ std::string Comm::readLine()
 
 void Comm::writeLine(const std::string& s)
 {
-    if (!INIT_COMM)
+    if (!m_connected)
         return;
 
     std::string out = s + "\n";
     int n           = write(m_fd, out.c_str(), out.size());
     if (n < 0)
     {
-        std::cout << "Comm: Write error " << std::endl;
+        if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            std::cerr << "Comm: Hardware write error (Disconnect detected). Errno: " << errno << std::endl;
+            disconnect();
+            return;
+        }
     }
-
-#if (EN_ECHO)
-    std::cout << "Sent: " << s << std::endl;
-#endif
 
     // Emit the sent line to the terminal UI
     if (m_logCallback)
     {
         m_logCallback("TX", s);
     }
-}
-
-int Comm::getFD()
-{
-    return m_fd;
-}
-
-void Comm::closeComm()
-{
-    close(m_fd);
 }

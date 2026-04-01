@@ -7,7 +7,7 @@ GRBL::GRBL(const char* commPort)
 #if (INIT_COMM)
     // Start comm, fill csv
     std::cout << "Init Comm..." << std::endl;
-    if (comm.setupComm(commPort) == false)
+    if (comm.connect(commPort) == false)
     {
         std::cout << "COM SETUP FAILED" << std::endl;
         return;

@@ -10,18 +10,18 @@
 #include <unistd.h>
 
 #define SERIAL_TIMEOUT 10
-#define EN_ECHO        0
 
 class Comm
 {
     public:
-        bool INIT_COMM = true;
-
-        bool setupComm(const char* portName);
+        void connect(const char* portName);
+        void disconnect();
         std::string readLine();
         void writeLine(const std::string& s);
-        int getFD();
-        void closeComm();
+
+        int getFD() { return m_fd; }
+
+        bool isConnected() { return m_connected; }
 
         // Callback definition for logging GRBL commands
         using LogCallback = std::function<void(const std::string& dir, const std::string& msg)>;
@@ -30,4 +30,5 @@ class Comm
     private:
         int m_fd                  = -1;
         LogCallback m_logCallback = nullptr;
+        bool m_connected          = false;
 };
