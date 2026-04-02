@@ -2,15 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(RoveSoPnP_FlowControl CXX)
 set(CMAKE_CXX_STANDARD 20)
 
-add_library(RoveFlowControl
-    src/board.cpp
-    src/tapeLookup.cpp
-    src/grbl.cpp
-    src/comm.cpp
-    src/gantry.cpp
-    src/head.cpp
-    src/LED.cpp
-)
+file(GLOB_RECURSE LIB_SRC CONFIGURE_DEPENDS "src/*.cpp")
+add_library(RoveFlowControl ${LIB_SRC})
 
 target_include_directories(RoveFlowControl PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
