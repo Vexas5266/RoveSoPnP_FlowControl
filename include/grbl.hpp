@@ -11,8 +11,6 @@
 #include <unistd.h>
 
 #define GRBL_OK        true
-#define GRBL_FAST_MODE true
-#define EN_GRBL_STAT   false
 #define SERIAL_TIMEOUT 10
 
 enum class GRBL_STATUS

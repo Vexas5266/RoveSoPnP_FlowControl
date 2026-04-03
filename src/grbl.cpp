@@ -1,11 +1,6 @@
 #include "grbl.hpp"
 #include <sstream>
 
-// Prevent build errors if CMake doesn't provide this definition
-#ifndef INIT_COMM
-#define INIT_COMM 1
-#endif
-
 GRBL::GRBL(const char* commPort) : m_commPort(commPort)
 {
     connect();
@@ -158,15 +153,11 @@ bool GRBL::connect(std::string portName)
         m_commPort = portName;
     }
 
-#if (INIT_COMM)
     std::cout << "Init Comm on " << m_commPort << "..." << std::endl;
     if (!openPort(m_commPort.c_str()))
     {
         return false;
     }
-#else
-    return false;
-#endif
 
     // Flush startup
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
@@ -203,8 +194,7 @@ GRBL_STATUS GRBL::pollStatus()
         return GRBL_STATUS::ERROR;
 
     writeLine("?");
-    if (!GRBL_FAST_MODE)
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::string resp = readLine();
 
     if (waitForCommand() != GRBL_OK)
@@ -302,8 +292,7 @@ bool GRBL::sendCommand(std::string cmd_g)
 
     bool ok = true;
     writeLine(cmd_g);
-    if (!GRBL_FAST_MODE)
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ok = waitForCommand();
 
     return ok;
