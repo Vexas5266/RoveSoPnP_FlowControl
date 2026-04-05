@@ -152,15 +152,11 @@ bool GRBL::connect(std::string portName)
         m_commPort = portName;
     }
 
-#if (INIT_COMM)
     std::cout << "Init Comm on " << m_commPort << "..." << std::endl;
     if (!openPort(m_commPort.c_str()))
     {
         return false;
     }
-#else
-    return false;
-#endif
 
     std::cout << "Waiting for GRBL bootloader..." << std::endl;
 
