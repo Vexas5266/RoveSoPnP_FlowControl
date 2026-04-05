@@ -2,18 +2,22 @@
 #define GRBLH
 
 #include <chrono>
-#include <fcntl.h>
 #include <functional>
 #include <iostream>
+#include <sstream>
 #include <string>
-#include <termios.h>
-#include <thread>
-#include <unistd.h>
 
-#define GRBL_OK        true
-#define GRBL_FAST_MODE true
-#define EN_GRBL_STAT   false
-#define SERIAL_TIMEOUT 10
+// Qt Includes for Async Serial Communication
+#include <QByteArray>
+#include <QEventLoop>
+#include <QObject>
+#include <QSerialPort>
+#include <QTimer>
+
+#define GRBL_OK           true
+#define GRBL_FAST_MODE    true
+#define EN_GRBL_STAT      false
+#define SERIAL_TIMEOUT_MS 5000
 
 enum class GRBL_STATUS
 {
@@ -25,51 +29,55 @@ enum class GRBL_STATUS
 
 struct grbl_position_t
 {
-        float x;
-        float y;
-        float z;
-        float a;
-        float b;
-        float c;
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+        float a = 0.0f;
+        float b = 0.0f;
+        float c = 0.0f;
 };
 
-class GRBL
+class GRBL : public QObject
 {
+        Q_OBJECT
     public:
-        // Callback definition for logging GRBL commands
         using LogCallback = std::function<void(const std::string& dir, const std::string& msg)>;
 
-        GRBL(const char* commPort = "/dev/ttyACM0");
+        GRBL(const char* commPort = "/dev/ttyACM0", QObject* parent = nullptr);
         ~GRBL();
 
-        bool connect(std::string portName = "");    // Public connect with optional port override
-        void disconnect();                          // Public explicit disconnect
+        bool connect(std::string portName = "");
+        void disconnect();
 
-        bool checkConnection();                     // Reconnects if the line dropped
+        bool checkConnection();
 
         GRBL_STATUS pollStatus();
         bool isBusy();
         grbl_position_t getMachinePosition();
-        bool waitForCommand();
-        bool sendCommand(std::string cmd_g);
+
+        bool waitForCommand(int timeout_ms = SERIAL_TIMEOUT_MS);
+        bool sendCommand(std::string cmd_g, int timeout_ms = SERIAL_TIMEOUT_MS);
+
+        void feedHold();
+        void cycleStart();
 
         bool isConnected() const { return m_connected; }
 
         void setLogCallback(LogCallback cb) { m_logCallback = cb; }
 
     private:
-        // State variables
         std::string m_commPort;
-        int m_fd                  = -1;
+        QSerialPort* m_serial;
         bool m_connected          = false;
         bool m_explicitDisconnect = false;
         LogCallback m_logCallback = nullptr;
 
-        // Internal communication methods
+        QByteArray m_readBuffer;
+
         bool openPort(const char* portName);
         void closePort();
-        std::string readLine();
+        std::string readLine(int timeout_ms = SERIAL_TIMEOUT_MS);
         void writeLine(const std::string& s);
 };
 
-#endif /* GRBL_H */
+#endif /* GRBLH */

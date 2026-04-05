@@ -1,13 +1,22 @@
 #include "grbl.hpp"
-#include <sstream>
+#include <QString>
+#include <algorithm>
 
-// Prevent build errors if CMake doesn't provide this definition
 #ifndef INIT_COMM
 #define INIT_COMM 1
 #endif
 
-GRBL::GRBL(const char* commPort) : m_commPort(commPort)
+// Helper to delay without blocking the UI Thread
+static void delay_ms(int ms)
 {
+    QEventLoop loop;
+    QTimer::singleShot(ms, &loop, &QEventLoop::quit);
+    loop.exec(QEventLoop::ExcludeUserInputEvents);
+}
+
+GRBL::GRBL(const char* commPort, QObject* parent) : QObject(parent), m_commPort(commPort)
+{
+    m_serial = new QSerialPort(this);
     connect();
 }
 
@@ -21,56 +30,29 @@ bool GRBL::openPort(const char* portName)
     if (m_connected)
         closePort();
 
-    m_fd = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (m_fd < 0)
+    m_serial->setPortName(QString::fromStdString(portName));
+    m_serial->setBaudRate(QSerialPort::Baud115200);
+    m_serial->setDataBits(QSerialPort::Data8);
+    m_serial->setParity(QSerialPort::NoParity);
+    m_serial->setStopBits(QSerialPort::OneStop);
+    m_serial->setFlowControl(QSerialPort::NoFlowControl);
+
+    if (m_serial->open(QIODevice::ReadWrite))
     {
-        // Suppress std::cerr spam during disconnect polling
-        m_connected = false;
-        return false;
+        m_connected = true;
+        return true;
     }
 
-    // Configure port
-    struct termios tty{};
-    if (tcgetattr(m_fd, &tty) != 0)
-    {
-        std::cerr << "Error from tcgetattr" << std::endl;
-        closePort();
-        return false;
-    }
-
-    cfsetospeed(&tty, B115200);
-    cfsetispeed(&tty, B115200);
-
-    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;    // 8-bit chars
-    tty.c_iflag &= ~IGNBRK;                        // disable break processing
-    tty.c_lflag     = 0;                           // no signaling chars, no echo
-    tty.c_oflag     = 0;                           // no remapping, no delays
-    tty.c_cc[VMIN]  = 1;                           // read at least 1 char
-    tty.c_cc[VTIME] = 50;                          // timeout 0.1 s
-
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY);        // shut off xon/xoff ctrl
-    tty.c_cflag |= (CLOCAL | CREAD);               // ignore modem controls, enable reading
-    tty.c_cflag &= ~(PARENB | PARODD);             // no parity
-    tty.c_cflag &= ~CSTOPB;                        // 1 stop bit
-    tty.c_cflag &= ~CRTSCTS;                       // no hardware flow control
-
-    if (tcsetattr(m_fd, TCSANOW, &tty) != 0)
-    {
-        std::cerr << "Error from tcsetattr" << std::endl;
-        closePort();
-        return false;
-    }
-
-    m_connected = true;
-    return true;
+    std::cerr << "GRBL: Failed to open port " << portName << std::endl;
+    m_connected = false;
+    return false;
 }
 
 void GRBL::closePort()
 {
-    if (m_fd >= 0)
+    if (m_serial->isOpen())
     {
-        close(m_fd);
-        m_fd = -1;
+        m_serial->close();
     }
     m_connected = false;
 }
@@ -81,68 +63,80 @@ void GRBL::disconnect()
     m_explicitDisconnect = true;
 }
 
-std::string GRBL::readLine()
+std::string GRBL::readLine(int timeout_ms)
 {
-    if (!m_connected)
+    if (!m_connected || !m_serial->isOpen())
         return "";
 
-    std::string line;
-    char c;
-    int timeout = SERIAL_TIMEOUT;
-    while (true)
+    // 1. Check if we already have a full line buffered
+    int newlineIdx = m_readBuffer.indexOf('\n');
+    if (newlineIdx != -1)
     {
-        int n = read(m_fd, &c, 1);
-        if (n > 0)
-        {
-            if (c == '\n')
-                break;
-            if (c != '\r')
-                line += c;
-        }
-        else if (timeout == 0)
-        {
-            line = "";
-            closePort();
-            break;
-        }
-        else if (n == 0 || ((n < 0) && (errno == EAGAIN || errno == EWOULDBLOCK)))
-        {
-            // no data available, sleep a bit and try again
-            timeout--;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-        else
-        {
-            // Actual read hardware fault detected
-            closePort();
-            break;
-        }
+        QByteArray lineData = m_readBuffer.left(newlineIdx);
+        m_readBuffer.remove(0, newlineIdx + 1);
+
+        std::string line = lineData.toStdString();
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+
+        if (!line.empty() && m_logCallback)
+            m_logCallback("RX", line);
+        return line;
     }
 
-    if (!line.empty() && m_logCallback)
+    // 2. Wait for hardware data asynchronously
+    QEventLoop loop;
+    QTimer timer;
+    timer.setSingleShot(true);
+
+    bool hasLine = false;
+
+    // Listen for new data. Using fully qualified QObject::connect to avoid name collisions
+    auto connection = QObject::connect(m_serial,
+                                       &QSerialPort::readyRead,
+                                       [&]()
+                                       {
+                                           m_readBuffer.append(m_serial->readAll());
+                                           if (m_readBuffer.contains('\n'))
+                                           {
+                                               hasLine = true;
+                                               loop.quit();
+                                           }
+                                       });
+
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+
+    timer.start(timeout_ms);
+    // This blocks the execution here so the C++ API remains synchronous,
+    // BUT allows Qt to repaint the GUI and run timers.
+    loop.exec(QEventLoop::ExcludeUserInputEvents);
+
+    QObject::disconnect(connection);
+
+    // 3. Process result after the event loop ends
+    newlineIdx = m_readBuffer.indexOf('\n');
+    if (newlineIdx != -1)
     {
-        m_logCallback("RX", line);
+        QByteArray lineData = m_readBuffer.left(newlineIdx);
+        m_readBuffer.remove(0, newlineIdx + 1);
+
+        std::string line = lineData.toStdString();
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+
+        if (!line.empty() && m_logCallback)
+            m_logCallback("RX", line);
+        return line;
     }
 
-    return line;
+    return "";    // Timeout occurred
 }
 
 void GRBL::writeLine(const std::string& s)
 {
-    if (!m_connected)
+    if (!m_connected || !m_serial->isOpen())
         return;
 
     std::string out = s + "\n";
-    int n           = write(m_fd, out.c_str(), out.size());
-    if (n < 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            std::cerr << "GRBL: Hardware write error (Disconnect detected). Errno: " << errno << std::endl;
-            closePort();
-            return;
-        }
-    }
+    m_serial->write(out.c_str(), out.size());
 
     if (m_logCallback)
     {
@@ -168,19 +162,41 @@ bool GRBL::connect(std::string portName)
     return false;
 #endif
 
-    // Flush startup
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    readLine();    // Flush return
-    std::cout << "GRBL Startup:  ";
-    readLine();    // Startup
+    std::cout << "Waiting for GRBL bootloader..." << std::endl;
 
-    // Init GRBL
-    std::cout << "GRBL Initializing..." << std::endl;
-    writeLine("?");
-    std::cout << "Startup Status: ";
-    readLine();    // Status
-    readLine();    // Flush ok
+    auto start         = std::chrono::steady_clock::now();
+    bool found_welcome = false;
 
+    while (true)
+    {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() > 3000)
+            break;
+
+        std::string line = readLine(250);
+        if (line.find("Grbl") != std::string::npos)
+        {
+            found_welcome = true;
+            break;
+        }
+    }
+
+    std::cout << "Flushing buffers..." << std::endl;
+    while (true)
+    {
+        std::string flush = readLine(100);
+        if (flush.empty())
+            break;
+    }
+
+    if (!found_welcome)
+    {
+        std::cerr << "Warning: Did not see GRBL welcome message. Forcing sync..." << std::endl;
+        writeLine("");
+        waitForCommand(1000);
+    }
+
+    std::cout << "GRBL Successfully Initialized." << std::endl;
     return true;
 }
 
@@ -189,9 +205,7 @@ bool GRBL::checkConnection()
     if (!m_connected)
     {
         if (m_explicitDisconnect)
-        {
-            return false;    // Don't auto-reconnect if the user manually disconnected
-        }
+            return false;
         return connect();
     }
     return true;
@@ -204,15 +218,25 @@ GRBL_STATUS GRBL::pollStatus()
 
     writeLine("?");
     if (!GRBL_FAST_MODE)
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    std::string resp = readLine();
+        delay_ms(100);
 
-    if (waitForCommand() != GRBL_OK)
-        return GRBL_STATUS::ERROR;
+    std::string resp;
+
+    while (true)
+    {
+        resp = readLine(1000);
+        if (resp.empty() || resp.find("error") != std::string::npos)
+            return GRBL_STATUS::ERROR;
+
+        if (resp.find("<") != std::string::npos)
+            break;
+    }
+
+    waitForCommand(500);
 
     if (resp.find("Idle") != std::string::npos)
         return GRBL_STATUS::IDLE;
-    if (resp.find("Run") != std::string::npos)
+    if (resp.find("Run") != std::string::npos || resp.find("Home") != std::string::npos)
         return GRBL_STATUS::BUSY;
 
     return GRBL_STATUS::ERROR;
@@ -237,9 +261,20 @@ grbl_position_t GRBL::getMachinePosition()
         return ret;
 
     writeLine("?");
-    std::string resp = readLine();
 
-    // Safety check: ensure string isn't empty and actually contains a position report
+    std::string resp;
+    while (true)
+    {
+        resp = readLine(1000);
+        if (resp.empty() || resp.find("error") != std::string::npos)
+            return ret;
+
+        if (resp.find("<") != std::string::npos)
+            break;
+    }
+
+    waitForCommand(500);
+
     if (resp.empty() || resp.find("MPos:") == std::string::npos)
         return ret;
 
@@ -247,7 +282,7 @@ grbl_position_t GRBL::getMachinePosition()
     {
         std::istringstream tokenStream(resp);
         std::string output;
-        std::getline(tokenStream, output, ':');    // Get up to MPos:
+        std::getline(tokenStream, output, ':');
 
         std::getline(tokenStream, output, ',');    // X
         ret.x = std::stof(output);
@@ -264,47 +299,78 @@ grbl_position_t GRBL::getMachinePosition()
     }
     catch (...)
     {
-        // Catch any std::invalid_argument or std::out_of_range exceptions from stof
-        // If the serial data was garbled, we'll just safely return the default {0,0,0,0,0,0}
-        // instead of crashing the program.
+        // Suppress parsing exceptions
     }
 
     return ret;
 }
 
-bool GRBL::waitForCommand()
+bool GRBL::waitForCommand(int timeout_ms)
 {
     if (!checkConnection())
         return false;
 
-    // Loop until we get a definitive "ok", an "error", or a timeout
+    auto start = std::chrono::steady_clock::now();
+
     while (true)
     {
-        std::string response = readLine();
+        auto now      = std::chrono::steady_clock::now();
+        int elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+        int remaining = timeout_ms - elapsed;
+
+        if (remaining <= 0)
+            return false;
+
+        std::string response = readLine(remaining);
 
         if (response.empty())
-            return false;    // Timeout or disconnect
+            return false;
 
         if (response == "ok")
             return true;
 
         if (response.find("error") != std::string::npos)
             return false;
-
-        // If it's a [MSG:...] or something else, loop again and read the next line
     }
 }
 
-bool GRBL::sendCommand(std::string cmd_g)
+bool GRBL::sendCommand(std::string cmd_g, int timeout_ms)
 {
     if (!checkConnection())
         return false;
 
-    bool ok = true;
     writeLine(cmd_g);
-    if (!GRBL_FAST_MODE)
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    ok = waitForCommand();
 
-    return ok;
+    if (!GRBL_FAST_MODE)
+        delay_ms(50);
+
+    return waitForCommand(timeout_ms);
+}
+
+void GRBL::feedHold()
+{
+    if (!m_connected || !m_serial->isOpen())
+        return;
+
+    // Send the ! character immediately without a newline
+    m_serial->write("!");
+
+    if (m_logCallback)
+    {
+        m_logCallback("TX", "!");
+    }
+}
+
+void GRBL::cycleStart()
+{
+    if (!m_connected || !m_serial->isOpen())
+        return;
+
+    // Send the ~ character immediately without a newline
+    m_serial->write("~");
+
+    if (m_logCallback)
+    {
+        m_logCallback("TX", "~");
+    }
 }

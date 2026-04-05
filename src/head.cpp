@@ -4,12 +4,7 @@
 // Untested
 void Head::increment(int degrees)
 {
-    if ((m_angle >= 720) || (m_angle <= -720))
-        m_angle = 0;
-
-    m_angle += degrees;
-
-    m_grbl->sendCommand("G90 G0 A" + std::to_string(m_angle));
+    m_grbl->sendCommand("G91 G1 F500 A" + std::to_string(degrees));
 }
 
 // Untested
@@ -17,7 +12,7 @@ void Head::vacuumOn()
 {
     m_vacuum_state = VACUUM_STATE::ON;
     m_grbl->sendCommand("$32=0");
-    m_grbl->sendCommand("M3 S1000");
+    m_grbl->sendCommand("M4 S1000");
 }
 
 // Untested
