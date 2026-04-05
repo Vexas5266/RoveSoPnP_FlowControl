@@ -11,13 +11,15 @@
 #include <unistd.h>
 
 #define GRBL_OK        true
-#define SERIAL_TIMEOUT 10
+#define VERBOSE_SERIAL true
+#define SERIAL_TIMEOUT 1000    // ms
 
 enum class GRBL_STATUS
 {
     IDLE,
     BUSY,
     ERROR,
+    ALARM,
     COUNT
 };
 
@@ -37,7 +39,7 @@ class GRBL
         // Callback definition for logging GRBL commands
         using LogCallback = std::function<void(const std::string& dir, const std::string& msg)>;
 
-        GRBL(const char* commPort = "/dev/ttyACM0");
+        GRBL();    // Must call connect() after constructing, and before usage
         ~GRBL();
 
         bool connect(std::string portName = "");    // Public connect with optional port override
@@ -51,23 +53,19 @@ class GRBL
         bool waitForCommand();
         bool sendCommand(std::string cmd_g);
 
-        bool isConnected() const { return m_connected; }
-
         void setLogCallback(LogCallback cb) { m_logCallback = cb; }
+
+        std::string readLine();
+        void writeLine(const std::string& s);    // Move back to private
 
     private:
         // State variables
-        std::string m_commPort;
         int m_fd                  = -1;
-        bool m_connected          = false;
-        bool m_explicitDisconnect = false;
         LogCallback m_logCallback = nullptr;
 
         // Internal communication methods
-        bool openPort(const char* portName);
+        void openPort(const char* portName);
         void closePort();
-        std::string readLine();
-        void writeLine(const std::string& s);
 };
 
 #endif /* GRBL_H */

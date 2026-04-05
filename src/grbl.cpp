@@ -1,27 +1,23 @@
 #include "grbl.hpp"
 #include <sstream>
 
-GRBL::GRBL(const char* commPort) : m_commPort(commPort)
-{
-    connect();
-}
+GRBL::GRBL() {}
 
 GRBL::~GRBL()
 {
     disconnect();
 }
 
-bool GRBL::openPort(const char* portName)
+void GRBL::openPort(const char* portName)
 {
-    if (m_connected)
-        closePort();
+    closePort();
 
     m_fd = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (m_fd < 0)
     {
-        // Suppress std::cerr spam during disconnect polling
-        m_connected = false;
-        return false;
+        // Openning port failed
+        std::cout << "[COM] Port opening failed. " << std::endl;
+        return;
     }
 
     // Configure port
@@ -30,7 +26,6 @@ bool GRBL::openPort(const char* portName)
     {
         std::cerr << "Error from tcgetattr" << std::endl;
         closePort();
-        return false;
     }
 
     cfsetospeed(&tty, B115200);
@@ -53,11 +48,9 @@ bool GRBL::openPort(const char* portName)
     {
         std::cerr << "Error from tcsetattr" << std::endl;
         closePort();
-        return false;
     }
 
-    m_connected = true;
-    return true;
+    std::cout << "[COM] Port opened on: " << portName << std::endl;
 }
 
 void GRBL::closePort()
@@ -65,20 +58,20 @@ void GRBL::closePort()
     if (m_fd >= 0)
     {
         close(m_fd);
+        std::cout << "[COM] Port closed on FD: " << m_fd << std::endl;
         m_fd = -1;
     }
-    m_connected = false;
 }
 
 void GRBL::disconnect()
 {
     closePort();
-    m_explicitDisconnect = true;
+    std::cout << "[COM] Device intentionally disconnected." << std::endl;
 }
 
 std::string GRBL::readLine()
 {
-    if (!m_connected)
+    if (m_fd < 0)
         return "";
 
     std::string line;
@@ -90,80 +83,71 @@ std::string GRBL::readLine()
         if (n > 0)
         {
             if (c == '\n')
+            {
+                read(m_fd, &c, 1);    // Eat \n
                 break;
+            }
             if (c != '\r')
                 line += c;
         }
         else if (timeout == 0)
         {
-            line = "";
-            closePort();
-            break;
+            std::cout << "[COM] Buffer empty n: " << n << std::endl;
+            return "";
         }
-        else if (n == 0 || ((n < 0) && (errno == EAGAIN || errno == EWOULDBLOCK)))
+        else if (n < 0)
         {
-            // no data available, sleep a bit and try again
             timeout--;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        else
+        else if (n == 0)
         {
-            // Actual read hardware fault detected
+            std::cout << "[COM] Disconnected n: " << n << std::endl;
             closePort();
-            break;
+            return "";
         }
     }
 
-    if (!line.empty() && m_logCallback)
-    {
+    if (VERBOSE_SERIAL)
+        std::cout << "[RX] " << line << std::endl;
+    if (m_logCallback)
         m_logCallback("RX", line);
-    }
 
     return line;
 }
 
 void GRBL::writeLine(const std::string& s)
 {
-    if (!m_connected)
+    if (m_fd < 0)
         return;
 
     std::string out = s + "\n";
     int n           = write(m_fd, out.c_str(), out.size());
     if (n < 0)
     {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            std::cerr << "GRBL: Hardware write error (Disconnect detected). Errno: " << errno << std::endl;
-            closePort();
-            return;
-        }
+        std::cerr << "[COM] Device accidentally disconnected W" << std::endl;
+        closePort();
+        return;
     }
 
     if (m_logCallback)
-    {
         m_logCallback("TX", s);
-    }
+    if (VERBOSE_SERIAL)
+        std::cout << "[TX] " << s << std::endl;
 }
 
 bool GRBL::connect(std::string portName)
 {
-    m_explicitDisconnect = false;
-    if (!portName.empty())
-    {
-        m_commPort = portName;
-    }
-
-    std::cout << "Init Comm on " << m_commPort << "..." << std::endl;
-    if (!openPort(m_commPort.c_str()))
-    {
+    openPort(portName.c_str());
+    if (m_fd < 0)
         return false;
-    }
 
     // Flush startup
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     readLine();    // Flush return
     std::cout << "GRBL Startup:  ";
     readLine();    // Startup
+    readLine();    // Unlock message
 
     // Init GRBL
     std::cout << "GRBL Initializing..." << std::endl;
@@ -172,27 +156,26 @@ bool GRBL::connect(std::string portName)
     readLine();    // Status
     readLine();    // Flush ok
 
+    // Add $ setup commands
+
     return true;
 }
 
 bool GRBL::checkConnection()
 {
-    if (!m_connected)
-    {
-        if (m_explicitDisconnect)
-        {
-            return false;    // Don't auto-reconnect if the user manually disconnected
-        }
-        return connect();
-    }
+    // if (!m_commConnected)
+    // {
+    //     if (m_explicitDisconnect)
+    //     {
+    //         return false;    // Don't auto-reconnect if the user manually disconnected
+    //     }
+    //     return connect(m_commPort);
+    // }
     return true;
 }
 
 GRBL_STATUS GRBL::pollStatus()
 {
-    if (!checkConnection())
-        return GRBL_STATUS::ERROR;
-
     writeLine("?");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::string resp = readLine();
@@ -204,15 +187,14 @@ GRBL_STATUS GRBL::pollStatus()
         return GRBL_STATUS::IDLE;
     if (resp.find("Run") != std::string::npos)
         return GRBL_STATUS::BUSY;
+    if (resp.find("Alarm") != std::string::npos)
+        return GRBL_STATUS::ALARM;
 
     return GRBL_STATUS::ERROR;
 }
 
 bool GRBL::isBusy()
 {
-    if (!checkConnection())
-        return false;
-
     if (pollStatus() == GRBL_STATUS::BUSY)
         return true;
 
@@ -223,9 +205,6 @@ grbl_position_t GRBL::getMachinePosition()
 {
     grbl_position_t ret = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
-    if (!checkConnection())
-        return ret;
-
     writeLine("?");
     std::string resp = readLine();
 
@@ -233,63 +212,47 @@ grbl_position_t GRBL::getMachinePosition()
     if (resp.empty() || resp.find("MPos:") == std::string::npos)
         return ret;
 
-    try
-    {
-        std::istringstream tokenStream(resp);
-        std::string output;
-        std::getline(tokenStream, output, ':');    // Get up to MPos:
+    std::istringstream tokenStream(resp);
+    std::string output;
+    std::getline(tokenStream, output, ':');    // Get up to MPos:
 
-        std::getline(tokenStream, output, ',');    // X
-        ret.x = std::stof(output);
-        std::getline(tokenStream, output, ',');    // Y
-        ret.y = std::stof(output);
-        std::getline(tokenStream, output, ',');    // Z
-        ret.z = std::stof(output);
-        std::getline(tokenStream, output, ',');    // A
-        ret.a = std::stof(output);
-        std::getline(tokenStream, output, ',');    // B
-        ret.b = std::stof(output);
-        std::getline(tokenStream, output, '|');    // C
-        ret.c = std::stof(output);
-    }
-    catch (...)
-    {
-        // Catch any std::invalid_argument or std::out_of_range exceptions from stof
-        // If the serial data was garbled, we'll just safely return the default {0,0,0,0,0,0}
-        // instead of crashing the program.
-    }
+    std::getline(tokenStream, output, ',');    // X
+    ret.x = std::stof(output);
+    std::getline(tokenStream, output, ',');    // Y
+    ret.y = std::stof(output);
+    std::getline(tokenStream, output, ',');    // Z
+    ret.z = std::stof(output);
+    std::getline(tokenStream, output, ',');    // A
+    ret.a = std::stof(output);
+    std::getline(tokenStream, output, ',');    // B
+    ret.b = std::stof(output);
+    std::getline(tokenStream, output, '|');    // C
+    ret.c = std::stof(output);
+
+    std::cout << "X:" << ret.x << " Y:" << ret.y << " Z:" << ret.z << " A:" << ret.a << " B:" << ret.b << " C:" << ret.c << std::endl;
 
     return ret;
 }
 
 bool GRBL::waitForCommand()
 {
-    if (!checkConnection())
-        return false;
+    std::string response = readLine();
 
-    // Loop until we get a definitive "ok", an "error", or a timeout
-    while (true)
+    if (response == "ok")
+        return true;
+
+    if (response.find("MSG") != std::string::npos)
     {
-        std::string response = readLine();
-
-        if (response.empty())
-            return false;    // Timeout or disconnect
-
-        if (response == "ok")
+        std::cout << "itsa msg:";
+        if (readLine() == "ok")
             return true;
-
-        if (response.find("error") != std::string::npos)
-            return false;
-
-        // If it's a [MSG:...] or something else, loop again and read the next line
     }
+
+    return false;
 }
 
 bool GRBL::sendCommand(std::string cmd_g)
 {
-    if (!checkConnection())
-        return false;
-
     bool ok = true;
     writeLine(cmd_g);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
