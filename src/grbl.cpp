@@ -1,6 +1,7 @@
 #include "grbl.hpp"
 #include <QString>
 #include <algorithm>
+#include <iostream>
 
 #ifndef INIT_COMM
 #define INIT_COMM 1
@@ -190,6 +191,24 @@ bool GRBL::connect(std::string portName)
         std::cerr << "Warning: Did not see GRBL welcome message. Forcing sync..." << std::endl;
         writeLine("");
         waitForCommand(1000);
+    }
+
+    // Send GRBL config commands to ensure it's in a known state.
+    std::cout << "Sending configuration commands..." << std::endl;
+    const char* config_cmds[] = {"$0=10",         "$1=0",         "$2=0",         "$3=10",        "$4=0",         "$5=0",         "$6=0",         "$10=1",
+                                 "$11=0.020",     "$12=0.002",    "$13=0",        "$20=0",        "$21=1",        "$22=1",        "$23=35",       "$24=25.000",
+                                 "$25=250.000",   "$26=250",      "$27=5.000",    "$30=99",       "$31=550",      "$32=0",        "$100=79.877",  "$101=80.141",
+                                 "$102=400.000",  "$103=1.111",   "$104=8.889",   "$105=79.877",  "$110=750.000", "$111=750.000", "$112=750.000", "$113=1440.000",
+                                 "$114=1440.000", "$115=750.000", "$120=50.000",  "$121=50.000",  "$122=50.000",  "$123=50.000",  "$124=50.000",  "$125=50.000",
+                                 "$130=400.000",  "$131=200.000", "$132=200.000", "$133=360.000", "$134=180.000", "$135=400.000"};
+
+    for (const char* cmd : config_cmds)
+    {
+        // Give each command up to 1000ms to acknowledge with 'ok'
+        if (!sendCommand(cmd, 1000))
+        {
+            std::cerr << "Warning: Failed to confirm configuration: " << cmd << std::endl;
+        }
     }
 
     std::cout << "GRBL Successfully Initialized." << std::endl;

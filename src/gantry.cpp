@@ -1,5 +1,6 @@
 
 #include "gantry.hpp"
+#include <thread>
 
 // Untested
 void Gantry::setGlobalPosition(float x, float y)
@@ -24,5 +25,6 @@ void Gantry::home()
     m_global_position.y = 0;
     m_global_position.z = 0;    // Or change to top position
 
-    m_grbl->sendCommand("$H");
+    m_grbl->sendCommand("$H", 60000);
+    m_grbl->sendCommand("G92 X0 Y0 Z0");
 }
