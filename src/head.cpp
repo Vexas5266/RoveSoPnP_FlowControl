@@ -2,17 +2,17 @@
 #include "head.hpp"
 
 // Untested
-void Head::increment(int degrees)
+void Head::increment(float degrees)
 {
-    m_grbl->sendCommand("G91 G1 F500 A" + std::to_string(degrees));
+    m_grbl->sendCommand("G91 G0 A" + std::to_string(degrees));
 }
 
 // Untested
-void Head::vacuumOn()
+void Head::vacuumOn(int suckage)
 {
     m_vacuum_state = VACUUM_STATE::ON;
     m_grbl->sendCommand("$32=0");
-    m_grbl->sendCommand("M4 S1000");
+    m_grbl->sendCommand("M4 S" + std::to_string(suckage));
 }
 
 // Untested

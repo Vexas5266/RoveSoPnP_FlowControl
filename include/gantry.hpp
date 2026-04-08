@@ -9,8 +9,6 @@ class Gantry
     private:
         std::shared_ptr<GRBL> m_grbl;
 
-        grbl_position_t m_global_position;
-
     public:
         Gantry(std::shared_ptr<GRBL> grbl) { m_grbl = grbl; }
 
@@ -20,7 +18,7 @@ class Gantry
         void setHeadHeight(float z);
         void home();
 
-        grbl_position_t getGlobalPosition() { return m_global_position; }
+        grbl_position_t getGlobalPosition() { return m_grbl->getMachinePosition(); }
 
         const grbl_position_t offsetCamToHead = {0, 0, 0};    // TODO: Measure
 };
