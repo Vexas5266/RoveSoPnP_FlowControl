@@ -10,11 +10,8 @@
 
 #include "tapeLookup.hpp"
 
-#define P_EXP 0
-#define Q_MEAS 1
-
-#define DEG2RAD(x) (x * M_PI) / 180.0
-#define RAD2DEG(x) (180.0 * x) / M_PI
+#define P_EXP 0 //Board Fiducial
+#define Q_MEAS 1 //Manual Fiducial
 
 struct component_t {
     std::string ref;
@@ -27,11 +24,13 @@ struct component_t {
 };
 
 struct board_coords_t {
-    float x;
-    float y;
-    float z;
-    float r;
+    double x;
+    double y;
+    double r;
 };
+
+#define DEG2RAD(x) (x * M_PI) / 180.0
+#define RAD2DEG(x) (180.0 * x) / M_PI
 
 enum components_status_t {
     SAME_CUTTAPE,
@@ -48,8 +47,8 @@ class Components {
         std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>>::iterator m_cuttape_it;
         std::vector<component_t>::iterator m_component_it;
 
-        std::vector<std::tuple<component_t, component_t>> m_fiducials; // <Board, manual>
-        board_coords_t m_board_offset = {0, 0, 0, 0};
+        std::vector<board_coords_t> m_fiducials;
+        board_coords_t m_board_offset = {0, 0, 0}; // {mm, mm, radians}
 
         int m_placed_components = 0;
 
@@ -67,12 +66,12 @@ class Components {
         std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>> getPlacementMap() { return m_placement_map; }
         int getPlacedComponents() { return m_placed_components; }
 
-        std::vector<std::tuple<component_t, component_t>> getBoardFiducials() { return m_fiducials; }
-        void setManualFidcucials(int idx, board_coords_t manual_coords);
-        void calculateBoardOffset();
-        board_coords_t getBoardOffset() { return m_board_offset; }
+        std::vector<board_coords_t> getBoardFiducials() { return m_fiducials; }
+        void calculateBoardOffset(std::vector<board_coords_t> global_fiducials);
         void transformToPCBCoords(board_coords_t* global_coords);
         void transformToGlobalCoords(board_coords_t* PCB_coords);
+        
+        void printCoords(board_coords_t coords);
 
         // After incrementing, returns if it had to move to a new cuttape, 
         // is in the same cuttape, or is at the end of the map

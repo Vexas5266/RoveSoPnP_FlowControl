@@ -72,7 +72,7 @@ Ref,Val,Package,PosX,PosY,Rot,Side
 "R41","220","R_0603_1608Metric_Pad0.98x0.95mm_HandSolder",72.352500,75.135500,180.000000,top
 "REF**","Fiducial_1mm_Mask2mm","Fiducial_1mm_Mask2mm",2.413000,9.525000,0.000000,top
 "REF**","Fiducial_1mm_Mask2mm","Fiducial_1mm_Mask2mm",8.128000,121.920000,0.000000,top
-"REF*","Fiducial_1mm_Mask2mm","Fiducial_1mm_Mask2mm",84.963000,127.635000,0.000000,top
+"REF**","Fiducial_1mm_Mask2mm","Fiducial_1mm_Mask2mm",84.963000,127.635000,0.000000,top
 "SW1","SW_Push","SW_SPST_TL3305A",75.148500,45.363000,180.000000,top
 "SW2","SW_Push","SW_SPST_TL3305A",89.460500,45.339000,180.000000,top
 "SW3","SW_Push","SW_SPST_TL3305A",75.184000,51.586000,180.000000,top

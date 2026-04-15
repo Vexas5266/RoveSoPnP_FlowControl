@@ -15,6 +15,13 @@ Components::Components(const char* csvFile)
     m_component_it = m_cuttape_it->second.begin();
 }
 
+static void round(board_coords_t* coord) 
+{ 
+    coord->x = std::round(coord->x * 1000.0f) / 1000.0f;
+    coord->y = std::round(coord->y * 1000.0f) / 1000.0f;
+    coord->r = std::round(coord->r * 1000.0f) / 1000.0f;
+}
+
 static std::string parseItemString(std::stringstream& s)
 {
     std::string data;
@@ -65,7 +72,7 @@ void Components::addComponentLookUp(component_t component)
 {
     if (component.ref == "REF**")
     {
-        m_fiducials.push_back({component, {"MAN**", "ManFiducial", "ManFiducial", 0, 0, 0, "top"}});
+        m_fiducials.push_back({component.posX, component.posY, component.rotation});
         return;
     }
 
@@ -137,7 +144,7 @@ void Components::printComponents()
     int count                                                                             = 0;
     std::map<std::tuple<std::string, cuttape_t>, std::vector<component_t>>::iterator u_it = m_placement_map.begin();
     std::vector<component_t>::iterator c_it                                               = u_it->second.begin();
-    std::vector<std::tuple<component_t, component_t>>::iterator f_it                      = m_fiducials.begin();
+    std::vector<board_coords_t>::iterator f_it                      = m_fiducials.begin();
 
     while (u_it != m_placement_map.end())
     {
@@ -156,8 +163,7 @@ void Components::printComponents()
 
     while (f_it != m_fiducials.end())
     {
-        std::cout << "Fiducials: " << (std::get<0>(*f_it)).value << " X:" << (std::get<0>(*f_it)).posX << " Y:" << (std::get<0>(*f_it)).posY << std::endl;
-        std::cout << "Manual Fiducial: " << (std::get<1>(*f_it)).value << " X:" << (std::get<1>(*f_it)).posX << " Y:" << (std::get<1>(*f_it)).posY << std::endl;
+        std::cout << "Fiducials: " << " X:" << f_it->x << " Y:" << f_it->y << " R:" << f_it->r << std::endl;
         f_it++;
         count++;
     }
@@ -165,104 +171,121 @@ void Components::printComponents()
     std::cout << "Size: " << count << std::endl;
 }
 
-void Components::setManualFidcucials(int idx, board_coords_t manual_coords)
-{
-    std::get<1>(m_fiducials[idx]).posX = manual_coords.x;
-    std::get<1>(m_fiducials[idx]).posY = manual_coords.y;
-}
-
-void Components::calculateBoardOffset()
+void Components::calculateBoardOffset(std::vector<board_coords_t> global_fiducials)
 {
     int N                    = m_fiducials.size();
-    board_coords_t transform = {0, 0, 0, 0};
+    board_coords_t transform = {0};
 
     if (N == 0)
         return;
     else if (N == 1)
     {
-        transform.x = std::get<Q_MEAS>(m_fiducials[0]).posX - std::get<P_EXP>(m_fiducials[0]).posX;
-        transform.y = std::get<Q_MEAS>(m_fiducials[0]).posY - std::get<P_EXP>(m_fiducials[0]).posY;
+        transform.x = global_fiducials[0].x - m_fiducials[0].x;
+        transform.y = global_fiducials[0].y - m_fiducials[0].y;
         transform.r = 0;
     }
     else if (N == 2)
     {
-        float theta_P = atan2f(std::get<P_EXP>(m_fiducials[1]).posY - std::get<P_EXP>(m_fiducials[0]).posY,
-                               std::get<P_EXP>(m_fiducials[1]).posX - std::get<P_EXP>(m_fiducials[0]).posX);
-        float theta_Q = atan2f(std::get<Q_MEAS>(m_fiducials[1]).posY - std::get<Q_MEAS>(m_fiducials[0]).posY,
-                               std::get<Q_MEAS>(m_fiducials[1]).posX - std::get<Q_MEAS>(m_fiducials[0]).posX);
+        double theta_P = atan2f(m_fiducials[1].y - m_fiducials[0].y,
+                                m_fiducials[1].x - m_fiducials[0].x);
+        double theta_Q = atan2f(global_fiducials[1].y - global_fiducials[0].y,
+                                global_fiducials[1].x - global_fiducials[0].x);
         transform.r   = theta_Q - theta_P;
 
-        transform.x   = std::get<Q_MEAS>(m_fiducials[0]).posX -
-                      ((std::get<P_EXP>(m_fiducials[0]).posX * cosf(transform.r)) - (std::get<P_EXP>(m_fiducials[0]).posY * sinf(transform.r)));
-        transform.y = std::get<Q_MEAS>(m_fiducials[0]).posY -
-                      ((std::get<P_EXP>(m_fiducials[0]).posX * sinf(transform.r)) + (std::get<P_EXP>(m_fiducials[0]).posY * cosf(transform.r)));
+        transform.x   = global_fiducials[0].x - ((m_fiducials[0].x * cosf(transform.r)) 
+                                              - (m_fiducials[0].y * sinf(transform.r)));
+        transform.y = global_fiducials[0].y   - ((m_fiducials[0].x * sinf(transform.r))
+                                              + (m_fiducials[0].y * cosf(transform.r)));
     }
     else if (N > 2)
     {
-        float Px_bar = 0;
-        float Py_bar = 0;
-        float Qx_bar = 0;
-        float Qy_bar = 0;
+        double Px_bar = 0;
+        double Py_bar = 0;
+        double Qx_bar = 0;
+        double Qy_bar = 0;
         for (int i = 0; i < N; i++)
         {
-            Px_bar += std::get<P_EXP>(m_fiducials[i]).posX;
-            Py_bar += std::get<P_EXP>(m_fiducials[i]).posY;
-            Qx_bar += std::get<Q_MEAS>(m_fiducials[i]).posX;
-            Qy_bar += std::get<Q_MEAS>(m_fiducials[i]).posY;
+            Px_bar += m_fiducials[i].x;
+            Py_bar += m_fiducials[i].y;
+            Qx_bar += global_fiducials[i].x;
+            Qy_bar += global_fiducials[i].y;
         }
-        board_coords_t centroid_P = {Px_bar * ((float) 1.0 / N), Py_bar * ((float) 1.0 / N), 0, 0};
-        board_coords_t centroid_Q = {Qx_bar * ((float) 1.0 / N), Qy_bar * ((float) 1.0 / N), 0, 0};
+        board_coords_t centroid_P = {Px_bar * ((double) 1.0 / N), Py_bar * ((double) 1.0 / N), 0};
+        board_coords_t centroid_Q = {Qx_bar * ((double) 1.0 / N), Qy_bar * ((double) 1.0 / N), 0};
 
-        double sinR, cosR = 0;
+        double sinR = 0; 
+        double cosR = 0;
         for (int i = 0; i < N; i++)
         {
             board_coords_t p, q;
-            p.x = std::get<P_EXP>(m_fiducials[i]).posX - centroid_P.x;
-            p.y = std::get<P_EXP>(m_fiducials[i]).posY - centroid_P.y;
-            q.x = std::get<Q_MEAS>(m_fiducials[i]).posX - centroid_Q.x;
-            q.y = std::get<Q_MEAS>(m_fiducials[i]).posY - centroid_Q.y;
+            p.x = m_fiducials[i].x - centroid_P.x;
+            p.y = m_fiducials[i].y - centroid_P.y;
+            q.x = global_fiducials[i].x - centroid_Q.x;
+            q.y = global_fiducials[i].y - centroid_Q.y;
 
             sinR += (p.x * q.y) - (p.y * q.x);
             cosR += (p.x * q.x) + (p.y * q.y);
         }
         transform.r = atan2(sinR, cosR);
 
-        transform.x = Qx_bar - ((Px_bar * cosf(transform.r)) - Py_bar * sinf(transform.r));
-        transform.y = Qy_bar - ((Px_bar * sinf(transform.r)) + Py_bar * cosf(transform.r));
+        double c = cosf(transform.r);
+        double s = sinf(transform.r);
+
+        transform.x = centroid_Q.x - ((centroid_P.x * c) - (centroid_P.y * s));
+        transform.y = centroid_Q.y - ((centroid_P.x * s) + (centroid_P.y * c));
     }
     else
         return;
 
+    round(&transform);
     m_board_offset = transform;
 }
 
 void Components::transformToPCBCoords(board_coords_t* global_coords)
 {
-    board_coords_t new_coords;
+    board_coords_t pcb_coords;
 
-    new_coords.x = (global_coords->x * cosf(m_board_offset.r)) - (global_coords->y * sinf(m_board_offset.r)) + m_board_offset.x;
-    new_coords.y = (global_coords->x * sinf(m_board_offset.r)) + (global_coords->y * cosf(m_board_offset.r)) + m_board_offset.y;
-    new_coords.r = global_coords->r + m_board_offset.r;
-    std::cout << " offsetR:" << m_board_offset.r << std::endl;
-    std::cout << " globalR:" << global_coords->r << std::endl;
-    std::cout << " globalx:" << global_coords->x << std::endl;
-    std::cout << " globaly:" << global_coords->y << std::endl;
-    std::cout << " newR:" << new_coords.r << std::endl;
+    double c = cosf(-m_board_offset.r);
+    double s = sinf(-m_board_offset.r);
 
-    *global_coords = new_coords;
+    // Apply rotation
+    pcb_coords.x = (global_coords->x * c) - (global_coords->y * s);
+    pcb_coords.y = (global_coords->x * s) + (global_coords->y * c);
+
+    // Apply translation
+    pcb_coords.x = global_coords->x - m_board_offset.x;
+    pcb_coords.y = global_coords->y - m_board_offset.y;
+
+    pcb_coords.r = global_coords->r - RAD2DEG(m_board_offset.r);
+
+    round(&pcb_coords);
+    *global_coords = pcb_coords;
 }
 
 void Components::transformToGlobalCoords(board_coords_t* PCB_coords)
 {
-    board_coords_t new_coords;
+    board_coords_t global_coords;
 
-    new_coords.x = (PCB_coords->x - m_board_offset.x);
-    new_coords.y = (PCB_coords->y - m_board_offset.y);
+    double c = cosf(m_board_offset.r);
+    double s = sinf(m_board_offset.r);
 
-    new_coords.x = (new_coords.x * cosf(m_board_offset.r)) + (new_coords.y * sinf(m_board_offset.r));
-    new_coords.y = (-new_coords.x * sinf(m_board_offset.r)) + (new_coords.y * cosf(m_board_offset.r));
+    // Apply rotation
+    global_coords.x = (PCB_coords->x * c) - (PCB_coords->y * s);
+    global_coords.y = (PCB_coords->x * s) + (PCB_coords->y * c);
 
-    new_coords.r = PCB_coords->r - m_board_offset.r;
+    // Apply translation
+    global_coords.x = PCB_coords->x + m_board_offset.x;
+    global_coords.y = PCB_coords->y + m_board_offset.y;
 
-    *PCB_coords  = new_coords;
+    global_coords.r = PCB_coords->r + RAD2DEG(m_board_offset.r);
+
+    round(&global_coords);
+    *PCB_coords  = global_coords;
+}
+
+void Components::printCoords(board_coords_t coords)
+{
+
+    std::cout << "Offset   x:" << m_board_offset.x << "   y:" << m_board_offset.y << "   r:" << RAD2DEG(m_board_offset.r) << std::endl;
+    std::cout << "Test     x:" << coords.x << "   y:" << coords.y << "   r:" << coords.r << std::endl;
 }
