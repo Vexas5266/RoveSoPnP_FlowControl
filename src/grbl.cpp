@@ -195,7 +195,7 @@ bool GRBL::connect(std::string portName)
 
     // Send GRBL config commands to ensure it's in a known state.
     std::cout << "Sending configuration commands..." << std::endl;
-    const char* config_cmds[] = {"$0=10",         "$1=255",       "$2=0",         "$3=41",        "$4=0",         "$5=0",         "$6=0",         "$10=1",
+    const char* config_cmds[] = {"$0=10",         "$1=0",         "$2=0",         "$3=41",        "$4=0",         "$5=0",         "$6=0",         "$10=1",
                                  "$11=0.020",     "$12=0.002",    "$13=0",        "$20=0",        "$21=1",        "$22=1",        "$23=35",       "$24=25.000",
                                  "$25=250.000",   "$26=250",      "$27=5.000",    "$30=99",       "$31=550",      "$32=0",        "$100=79.877",  "$101=80.141",
                                  "$102=73.665",   "$103=1.111",   "$104=8.889",   "$105=79.877",  "$110=750.000", "$111=750.000", "$112=750.000", "$113=1440.000",
@@ -290,31 +290,70 @@ grbl_position_t GRBL::getMachinePosition()
 
     waitForCommand(500);
 
-    if (resp.empty() || resp.find("MPos:") == std::string::npos)
-        return ret;
-
-    try
+    // Helper lambda to safely parse comma-separated coordinates from a specific tag
+    auto parseCoords = [](const std::string& str, const std::string& tag, grbl_position_t& pos) -> bool
     {
-        std::istringstream tokenStream(resp);
-        std::string output;
-        std::getline(tokenStream, output, ':');
+        size_t start = str.find(tag);
+        if (start != std::string::npos)
+        {
+            start += tag.length();
+            size_t end         = str.find_first_of("|>", start);
+            std::string coords = str.substr(start, end - start);
+            std::istringstream iss(coords);
+            std::string val;
 
-        std::getline(tokenStream, output, ',');    // X
-        ret.x = std::stof(output);
-        std::getline(tokenStream, output, ',');    // Y
-        ret.y = std::stof(output);
-        std::getline(tokenStream, output, ',');    // Z
-        ret.z = std::stof(output);
-        std::getline(tokenStream, output, ',');    // A
-        ret.a = std::stof(output);
-        std::getline(tokenStream, output, ',');    // B
-        ret.b = std::stof(output);
-        std::getline(tokenStream, output, '|');    // C
-        ret.c = std::stof(output);
+            try
+            {
+                if (std::getline(iss, val, ','))
+                    pos.x = std::stof(val);
+                if (std::getline(iss, val, ','))
+                    pos.y = std::stof(val);
+                if (std::getline(iss, val, ','))
+                    pos.z = std::stof(val);
+                if (std::getline(iss, val, ','))
+                    pos.a = std::stof(val);
+                if (std::getline(iss, val, ','))
+                    pos.b = std::stof(val);
+                if (std::getline(iss, val, ','))
+                    pos.c = std::stof(val);
+            }
+            catch (...)
+            {
+                // Suppress parsing exceptions for partial axes
+            }
+            return true;
+        }
+        return false;
+    };
+
+    grbl_position_t mpos = {0, 0, 0, 0, 0, 0};
+    grbl_position_t wpos = {0, 0, 0, 0, 0, 0};
+    grbl_position_t wco  = {0, 0, 0, 0, 0, 0};
+
+    bool hasWPos         = parseCoords(resp, "WPos:", wpos);
+    bool hasMPos         = parseCoords(resp, "MPos:", mpos);
+    bool hasWCO          = parseCoords(resp, "WCO:", wco);
+
+    // 1. If GRBL explicitly provides Work Position, use it directly.
+    if (hasWPos)
+    {
+        return wpos;
     }
-    catch (...)
+    // 2. If GRBL provides Machine Position AND the Work Coordinate Offset, calculate the Work Position.
+    else if (hasMPos && hasWCO)
     {
-        // Suppress parsing exceptions
+        ret.x = mpos.x - wco.x;
+        ret.y = mpos.y - wco.y;
+        ret.z = mpos.z - wco.z;
+        ret.a = mpos.a - wco.a;
+        ret.b = mpos.b - wco.b;
+        ret.c = mpos.c - wco.c;
+        return ret;
+    }
+    // 3. Fallback: Just return Machine Position if no work offsets are provided.
+    else if (hasMPos)
+    {
+        return mpos;
     }
 
     return ret;
