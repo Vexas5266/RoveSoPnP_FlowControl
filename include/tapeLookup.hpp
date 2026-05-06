@@ -15,15 +15,13 @@ enum orientation_t {
 };
 
 struct cuttape_t {
-    int ID;
-    float pitch;
-    float width;
-    orientation_t orient;
+    int ID = -1;
+    float pitch = -1;
+    float width = -1;
+    orientation_t orient = NA_O;
 
     bool operator<(const cuttape_t& other) const { return ID < other.ID; }
 };
-
-
 
 const int orientations_a[CNT_O] = {
     0,      /* NA */
