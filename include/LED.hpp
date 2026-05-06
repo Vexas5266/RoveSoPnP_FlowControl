@@ -4,13 +4,15 @@
 #include "grbl.hpp"
 #include <memory>
 
-enum class LED_STATE {
+enum class LED_STATE
+{
     ON,
     OFF,
     COUNT
 };
 
-enum class LED_COLOR {
+enum class LED_COLOR
+{
     RED,
     ORANGE,
     YELLOW,
@@ -21,18 +23,21 @@ enum class LED_COLOR {
     COUNT
 };
 
-class LED {
-
+class LED
+{
     private:
-        LED_STATE m_state = LED_STATE::OFF;
+        LED_STATE m_state  = LED_STATE::OFF;
         float m_brightness = 0; /* 0 to 1 */
-        LED_COLOR m_color = LED_COLOR::WHITE;
+        LED_COLOR m_color  = LED_COLOR::WHITE;
 
         std::shared_ptr<GRBL> m_grbl;
 
+        std::tuple<uint8_t, uint8_t, uint8_t> colorToRGB(LED_COLOR color);
+
     public:
         LED(std::shared_ptr<GRBL> grbl) { m_grbl = grbl; }
-        ~LED() { m_grbl = NULL; } 
+
+        ~LED() { m_grbl = NULL; }
 
         // Setters
         void setBrightness(float brightness);
